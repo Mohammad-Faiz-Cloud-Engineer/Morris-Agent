@@ -157,6 +157,9 @@ class Router:
             match = re.search(pattern, user_input)
             if match:
                 loc = match.group(1).strip()
+                # Drop trailing time words swept in by the greedy pattern
+                # (e.g. "London today"), longest alternatives first.
+                loc = re.sub(r"\s+(right now|today|tomorrow|tonight|now)$", "", loc, flags=re.IGNORECASE)
                 # Filter out common words
                 if loc.lower() not in ["the", "is", "it", "what", "how", "like"]:
                     return loc
@@ -189,7 +192,26 @@ class Router:
             try:
                 tool_type = ToolType(tool_call.name)
             except ValueError:
-                tool_type = ToolType.NONE
+                # Unknown tool name — fall back to text detection instead of
+                # returning a silent (NONE, no response) result.
+                tool_type, arguments = self._detect_tool_from_text(
+                    user_input, response.content
+                )
+                self.conversation_history.append(
+                    {"role": "user", "content": user_input}
+                )
+                if tool_type == ToolType.NONE:
+                    self.conversation_history.append(
+                        {"role": "assistant", "content": response.content or ""}
+                    )
+                    return RouterResult(
+                        tool=ToolType.NONE,
+                        response=response.content,
+                        arguments={},
+                    )
+                return RouterResult(
+                    tool=tool_type, response=None, arguments=arguments
+                )
 
             self.conversation_history.append(
                 {"role": "user", "content": user_input}

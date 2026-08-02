@@ -228,7 +228,7 @@ What `scripts/setup_raspi.sh` does in order:
 1. `apt` installs: Python tooling, build tools, SDL2, PortAudio, ALSA utilities
 2. Creates `venv313` and installs Python deps (`httpx sounddevice numpy piper-tts openwakeword onnxruntime pygame`)
 3. Installs Ollama and pulls `qwen2.5:1.5b`
-4. Clones + builds whisper.cpp, installs `whisper-cli` to `/usr/local/bin/whisper-cpp`, downloads `base.en`, quantizes to `q5_0`
+4. Clones + builds whisper.cpp, installs the `whisper-cli` binary as `whisper-cpp` in `/usr/local/bin`, downloads `base.en`, quantizes to `q5_0`
 5. Downloads `en_GB-semaine-medium.onnx` + `.onnx.json` into `piper/voices/`
 6. Copies `.env.example` → `.env`
 
