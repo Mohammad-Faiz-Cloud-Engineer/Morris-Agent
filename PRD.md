@@ -2,8 +2,7 @@
 
 **Version:** 3.0 (Codebase-Aligned)
 **Last Updated:** August 2026
-**Original Target Platform:** Raspberry Pi 5 (8GB RAM) — now multi-platform
-**Implemented Platforms:** Raspberry Pi OS, Windows, macOS, Debian/Ubuntu, Arch Linux
+**Supported Platforms:** Fully cross-platform — Windows (ARM + x86/x64), Linux (Debian/Ubuntu and Arch), and macOS on desktops and laptops
 **Document Purpose:** Complete, accurate guide reflecting the current implementation
 
 ---
@@ -28,7 +27,7 @@
 
 ### 1.1 Goal
 
-Create a modular, local-first voice AI assistant that runs on a Raspberry Pi 5 (8GB) as its primary target while remaining fully portable to Windows, macOS, Debian/Ubuntu, and Arch Linux desktops. Voice interaction is handled locally with an optional cloud fallback for complex queries. The project began on the Raspberry Pi 5 as an assistant named **Morris**, after radio-astronomy pioneer [Karl Jansky](https://en.wikipedia.org/wiki/Karl_Guthe_Jansky). The wake phrase remains "Hey Jansky".
+Create a modular, local-first voice AI assistant that runs on any desktop or laptop with Windows, macOS, or Linux (Debian/Ubuntu and Arch). No platform is special: the same checkout runs everywhere. Voice interaction is handled locally with an optional cloud fallback for complex queries. The assistant's name is **Morris Agent**. The wake word is **"Morris"**.
 
 ### 1.2 Core Philosophy
 
@@ -37,7 +36,7 @@ Create a modular, local-first voice AI assistant that runs on a Raspberry Pi 5 (
 ### 1.3 User Experience
 
 - Animated "Face" on an 800x480 display reacting to system states
-- Wake word activation: custom **"Hey Jansky"** or the bundled **"Hey Jarvis"** fallback
+- Wake word activation: custom **"Morris"** or the bundled **"Hey Jarvis"** fallback
 - Talking filler phrases ("On it!", "Let me check.") while the brain is thinking
 - Natural voice interaction with conversational responses
 
@@ -45,31 +44,30 @@ Create a modular, local-first voice AI assistant that runs on a Raspberry Pi 5 (
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Local LLM | Single Qwen2.5:1.5b for routing AND chat | Native tool-calling, ~3GB RAM, ~10 t/s on Pi 5 |
+| Local LLM | Single Qwen2.5:1.5b for routing AND chat | Native tool-calling, ~3GB RAM |
 | STT | `auto` backend: whisper.cpp `base.en-q5_0` when provisioned, else faster-whisper | Balance of speed and accuracy; portable fallback for desktops |
 | TTS | Piper Python package (`piper-tts`) with `en_GB-semaine-medium` | In-process synthesis, ~50MB RAM, no external binary needed |
-| Wake Word | Custom openWakeWord `Hey_Jansky.onnx`; bundled `Hey Jarvis` fallback | Trainable; a clean checkout works immediately |
+| Wake Word | Custom openWakeWord `Morris.onnx`; bundled `Hey Jarvis` fallback | Trainable; a clean checkout works immediately |
 | Tools | time, weather, news, system status, joke, cloud handoff | Six schemas covering the assistant's capabilities |
 | Cloud API | Kimi K2 preview via `api.moonshot.ai` | High-quality complex question answering |
-| UI | PyGame; native SDL desktop driver, `fbcon` only on headless Pi | No X server required on Pi; works on normal desktops |
+| UI | PyGame; native SDL desktop driver, optional `fbcon` on headless Linux | Works on normal desktops and headless Linux |
 
 ---
 
 ## 2. Hardware Specifications
 
-### 2.1 Required Hardware (Raspberry Pi target)
+### 2.1 Minimum Hardware
 
 ```yaml
 compute:
-  board: "Raspberry Pi 5"
-  ram: "8GB"
-  storage: "32GB+ microSD (Class 10/A2) or NVMe SSD recommended"
-  cooling: "Active cooling REQUIRED (fan + heatsink)"
+  ram: "2GB+ (8GB recommended for Ollama + Whisper headroom)"
+  storage: "10GB+ free (or NVMe SSD recommended)"
+  cooling: "Active cooling recommended during sustained inference"
 
 display:
-  type: "Raspberry Pi Official 7\" Touchscreen (DSI)"
+  type: "Any SDL-compatible display (desktop, laptop, or external)"
   resolution: "800x480"
-  interface: "DSI"
+  interface: "Auto-detected by SDL"
 
 audio_input:
   type: "USB Microphone"
@@ -88,7 +86,7 @@ connectivity:
 
 ### 2.2 Desktop Platforms
 
-The same checkout runs on Windows, macOS, Debian/Ubuntu, and Arch without source changes. `config.py` roots all paths to the checkout, device selection is portable (empty = OS default, otherwise a sound devices index or case-insensitive name substring), and the UI uses the native SDL driver unless `use_framebuffer` is set on a Linux Pi.
+The same checkout runs on Windows, macOS, Debian/Ubuntu, and Arch without source changes. `config.py` roots all paths to the checkout, device selection is portable (empty = OS default, otherwise a sound device index or case-insensitive name substring), and the UI uses the native SDL driver unless `use_framebuffer` is set on headless Linux.
 
 ### 2.3 Audio Device Diagnostics
 
@@ -144,7 +142,7 @@ aplay -l    # playback
    └── openWakeWord listening continuously (CPU: ~5%)
    └── UI showing "Idle" animation
 
-2. WAKE WORD DETECTED ("Hey Jansky" / "Hey Jarvis")
+2. WAKE WORD DETECTED ("Morris" / "Hey Jarvis")
    └── Router conversation history is cleared (fresh interaction)
    └── State → LISTENING; UI shows "Listening"
    └── Audio capture records until 1.5 s of silence or 15 s max
@@ -216,7 +214,7 @@ THINKING → ERROR → IDLE            (processing exception)
 
 ### 4.2 Installation
 
-#### 4.2.1 Raspberry Pi OS (one-command `setup.sh`)
+#### 4.2.1 Debian-based Linux (one-command `setup.sh`)
 
 ```bash
 git clone <repo-url>
@@ -241,7 +239,7 @@ source venv313/bin/activate
 python orchestrator.py
 ```
 
-If no custom `models/wake_word/Hey_Jansky.onnx` exists, startup announces and uses the bundled fallback phrase **"Hey Jarvis"**.
+If no custom `models/wake_word/Morris.onnx` exists, startup announces and uses the bundled fallback phrase **"Hey Jarvis"**.
 
 #### 4.2.2 Desktop Scripts
 
@@ -255,7 +253,7 @@ Run from a native terminal (not WSL). All scripts create `.venv`, install `requi
 | Arch Linux | `bash scripts/setup_arch.sh` |
 | macOS (Homebrew) | `bash scripts/setup_macos.sh` |
 
-`scripts/download_assets.py` downloads the Piper voice (`.onnx` + `.onnx.json`). Face PNGs and filler WAVs are already committed under `assets/face/` and `assets/fillers/`; if they are removed, the UI falls back to a procedural face and no fillers are played. Custom `models/wake_word/Hey_Jansky.onnx` is never downloaded — it must be added manually (see 4.3).
+`scripts/download_assets.py` downloads the Piper voice (`.onnx` + `.onnx.json`). Face PNGs and filler WAVs are already committed under `assets/face/` and `assets/fillers/`; if they are removed, the UI falls back to a procedural face and no fillers are played. Custom `models/wake_word/Morris.onnx` is never downloaded — it must be added manually (see 4.3).
 
 ### 4.3 openWakeWord Custom Model Training
 
@@ -265,26 +263,26 @@ Training happens on a separate machine (Colab/laptop). The custom model is NOT t
 
 ```python
 # Use the official openWakeWord training notebook (Colab)
-WAKE_WORD = "hey jansky"          # intended phrase
+WAKE_WORD = "morris"               # intended word
 TARGET_FALSE_ACCEPTS_PER_HOUR = 0.5
 NUM_SYNTHETIC_SAMPLES = 10000     # more is better but slower
 ```
 
-Export the trained model as an **ONNX** file and name it `Hey_Jansky.onnx` to match the code default.
+Export the trained model as an **ONNX** file and name it `Morris.onnx` to match the code default.
 
 #### 4.3.2 Transfer to the checkout
 
 ```bash
-scp Hey_Jansky.onnx <host>:<repo>/models/wake_word/Hey_Jansky.onnx
+scp Morris.onnx <host>:<repo>/models/wake_word/Morris.onnx
 ```
 
-Place `Hey_Jansky.onnx` under `models/wake_word/`. When that file is not present, startup logs a warning and loads the **bundled `hey_jarvis*.onnx`** supplied with the `openwakeword` package.
+Place `Morris.onnx` under `models/wake_word/`. When that file is not present, startup logs a warning and loads the **bundled `hey_jarvis*.onnx`** supplied with the `openwakeword` package.
 
 ---
 
 ## 5. Memory Budget
 
-### 5.1 RAM Allocation (Raspberry Pi target)
+### 5.1 RAM Allocation
 
 ```
 Total Available: 8192 MB
@@ -342,7 +340,7 @@ Key method: `record_until_silence(silence_threshold, silence_duration, max_durat
 
 ### Phase 3: Senses (Wake Word) — `senses/wake_word_detector.py`
 
-Detects a custom `Hey_Jansky.onnx` model from any system mic; falls back to the bundled "Hey Jarvis" model. Runs in a daemon thread over a `RawInputStream` with 80 ms/1280-sample chunks at 16 kHz (chunk size scaled to the actual mic rate).
+Detects a custom `Morris.onnx` model from any system mic; falls back to the bundled "Hey Jarvis" model. Runs in a daemon thread over a `RawInputStream` with 80 ms/1280-sample chunks at 16 kHz (chunk size scaled to the actual mic rate).
 
 ### Phase 4: Interface (UI Face) — `ui/ui_manager.py`
 
@@ -350,7 +348,7 @@ PyGame faces load every `*.png` in `assets/face/` (e.g. `happy`, `winking`, `thi
 
 ### Phase 5: Integration (Full System) — `orchestrator.py` + `config.py`
 
-`config.py` resolves all paths relative to the checkout, loads `config/config.json`, then `.env`, then OS env vars (`OPENWEATHER_API_KEY`, `NEWSAPI_KEY`, `MOONSHOT_API_KEY`; overridable `JANSKY_PROJECT_ROOT` / `JANSKY_CONFIG`).
+`config.py` resolves all paths relative to the checkout, loads `config/config.json`, then `.env`, then OS env vars (`OPENWEATHER_API_KEY`, `NEWSAPI_KEY`, `MOONSHOT_API_KEY`; overridable `MORRIS_PROJECT_ROOT` / `MORRIS_CONFIG`).
 
 `orchestrator.py`:
 - Initializes components, catching failures per optional tool and the UI
@@ -361,23 +359,23 @@ PyGame faces load every `*.png` in `assets/face/` (e.g. `happy`, `winking`, `thi
 - Speaks a random filler before routing (except "on camera")
 - Forces `os._exit(0)` on shutdown to kill daemon sounddevice threads
 
-#### 5.5 Systemd Service (Raspberry Pi)
+#### 5.5 Systemd Service (Linux)
 
 Reference example deployment unit (not versioned in the repository):
 
 ```ini
-# /etc/systemd/system/jansky.service
+# /etc/systemd/system/morris-agent.service
 [Unit]
-Description=Jansky AI Assistant
+Description=Morris Agent AI Assistant
 After=network.target ollama.service
 Wants=ollama.service
 
 [Service]
 Type=simple
-User=pi
-WorkingDirectory=/home/pi/jansky
-EnvironmentFile=/home/pi/jansky/.env
-ExecStart=/home/pi/jansky/venv313/bin/python orchestrator.py
+User=<user>
+WorkingDirectory=/home/<user>/Morris-Agent
+EnvironmentFile=/home/<user>/Morris-Agent/.env
+ExecStart=/home/<user>/Morris-Agent/venv313/bin/python orchestrator.py
 Restart=on-failure
 RestartSec=10
 
@@ -387,9 +385,9 @@ WantedBy=multi-user.target
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable jansky.service
-sudo systemctl start jansky.service
-sudo journalctl -u jansky.service -f
+sudo systemctl enable morris-agent.service
+sudo systemctl start morris-agent.service
+sudo journalctl -u morris-agent.service -f
 ```
 
 ---
@@ -404,7 +402,7 @@ sudo journalctl -u jansky.service -f
 ├── config.py                     Portable runtime config loader
 ├── orchestrator.py                Main entry point
 ├── requirements.txt               Python dependencies
-├── setup.sh                      One-command Raspberry Pi OS installer
+├── setup.sh                      One-command Debian-based Linux installer
 ├── .env.example                  API-key template
 ├── config/
 │   ├── config.json               Runtime settings & paths
@@ -438,7 +436,7 @@ sudo journalctl -u jansky.service -f
 │   ├── face/                    PNG face states (optional)
 │   └── fillers/                 Pre-generated filler WAVs (optional)
 ├── models/                      Untracked custom wake-word model
-│   └── wake_word/Hey_Jansky.onnx
+│   └── wake_word/Morris.onnx
 ├── piper/voices/                en_GB-semaine-medium.onnx (+.onnx.json)
 ├── whisper.cpp/                 Clone + downloaded models (built by setup)
 ├── scripts/
@@ -478,7 +476,7 @@ Keys are optional; missing-key tools reply with a configuration message.
   "stt_backend": "auto",
   "stt_model_name": "base.en",
   "chat_model": "qwen2.5:1.5b",
-  "wake_word_model": "models/wake_word/Hey_Jansky.onnx",
+  "wake_word_model": "models/wake_word/Morris.onnx",
   "wake_word_threshold": 0.5,
   "microphone_device": "",
   "speaker_device": "",
@@ -496,8 +494,8 @@ Keys are optional; missing-key tools reply with a configuration message.
 ```
 
 Path resolution:
-- Relative paths are rooted at `project_root` (the checkout, or `JANSKY_PROJECT_ROOT`).
-- `JANSKY_CONFIG` and OS environment variables can override the default config file location.
+- Relative paths are rooted at `project_root` (the checkout, or `MORRIS_PROJECT_ROOT`).
+- `MORRIS_CONFIG` and OS environment variables can override the default config file location.
 - API keys are loaded from the checkout `.env` and may be overridden by OS environment variables.
 - Secrets (`*_api_key` / `*_key`) are never written by `Config.save()`.
 
@@ -611,7 +609,7 @@ python tests/test_audio_pipeline.py
 > Routing note: jokes route to `get_joke` (`ToolType.JOKE`). test_router.py asserts `("Tell me a joke", ToolType.JOKE)` — the original `NONE` expectation was stale after `get_joke` and its keyword fallback were added.
 
 ### 10.3 Senses
-- Custom "Hey Jansky" detects when `models/` is present; otherwise "Hey Jarvis" fallback active and announced.
+- Custom "Morris" detects when `models/` is present; otherwise "Hey Jarvis" fallback active and announced.
 - False-positive rate kept low via model + threshold tuning.
 
 ### 10.4 UI
@@ -624,7 +622,7 @@ python tests/test_audio_pipeline.py
 - Full loop: wake word → listen → filler → router → response.
 - Error paths recover gracefully without leaving the wake detector paused.
 - Stable under continuous use; memory stays under 7 GB.
-- Portable: same checkout runs on Pi OS, Windows, macOS, Debian, Arch.
+- Portable: same checkout runs on Windows, macOS, and Linux.
 
 ---
 
@@ -644,14 +642,14 @@ python tests/test_audio_pipeline.py
 
 ### 11.4 Wake-Word False Positives
 **Risk:** ambient speech triggers the assistant.
-**Mitigations:** tune `wake_word_threshold` (default 0.5); test with the actual model (custom `Hey_Jansky.onnx` or bundled fallback) and ambient recordings per deployment environment.
+**Mitigations:** tune `wake_word_threshold` (default 0.5); test with the actual model (custom `Morris.onnx` or bundled fallback) and ambient recordings per deployment environment.
 
 ### 11.5 Network Failures
 **Risk:** Weather/News/Joke/Kimi unreachable.
 **Mitigations:** short timeouts per call (10s weather/news, 60s cloud, 5s joke), graceful spoken error messages, and optional tool init failures that skip the tool rather than crashing startup.
 
-### 11.6 Thermal Throttling (Pi)
-**Risk:** Pi overheats during sustained inference.
+### 11.6 Thermal Throttling
+**Risk:** sustained inference overheats a device.
 **Mitigations:** active cooling; monitor temperature in `get_system_status` (`psutil.sensors_temperatures`); keep inference burst-limited.
 
 ---
@@ -659,7 +657,7 @@ python tests/test_audio_pipeline.py
 ## Appendix A: Quick Start Commands
 
 ```bash
-# Raspberry Pi OS
+# Debian-based Linux (one-command)
 git clone <repo-url>
 cd <repo>
 chmod +x setup.sh && ./setup.sh

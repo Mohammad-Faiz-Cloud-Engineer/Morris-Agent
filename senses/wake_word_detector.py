@@ -50,7 +50,7 @@ class WakeWordDetector:
         custom_model = Path(model_path).expanduser() if model_path else None
         if custom_model and custom_model.exists():
             self.model = Model(wakeword_model_paths=[str(custom_model)])
-            self.wake_phrase = "Hey Jansky"
+            self.wake_phrase = "Morris"
             print(f"    Wake word model: {custom_model.name}")
         elif allow_builtin_fallback:
             # This makes a clean checkout usable immediately, while clearly
@@ -61,7 +61,7 @@ class WakeWordDetector:
                 raise FileNotFoundError("No bundled openWakeWord fallback model was found.")
             self.model = Model(wakeword_model_paths=[str(fallback)])
             self.wake_phrase = "Hey Jarvis"
-            print("    Warning: custom Hey Jansky model is missing; using built-in 'Hey Jarvis'.")
+            print("    Warning: custom Morris model is missing; using built-in 'Hey Jarvis'.")
         else:
             raise FileNotFoundError(f"Wake word model not found: {model_path}")
 
@@ -71,7 +71,7 @@ class WakeWordDetector:
         self._paused = False
         self._stop_event.clear()
         self._resume_event.set()
-        self._thread = Thread(target=self._listen_loop, name="jansky-wake-word", daemon=True)
+        self._thread = Thread(target=self._listen_loop, name="morris-wake-word", daemon=True)
         self._thread.start()
 
     def stop(self) -> None:

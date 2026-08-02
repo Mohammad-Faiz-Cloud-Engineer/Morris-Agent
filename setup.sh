@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================
-#  Jansky — One-Command Installer for Raspberry Pi 5
+#  Morris Agent — One-Command Installer for Debian-based Linux
 # ==============================================================
 #  Usage:  chmod +x setup.sh && ./setup.sh
 #
@@ -122,14 +122,14 @@ fi
 # ── Done ─────────────────────────────────────────────────────
 echo ""
 echo -e "${GREEN}════════════════════════════════════════════════════${NC}"
-echo -e "${GREEN}  Jansky is installed!${NC}"
+echo -e "${GREEN}  Morris Agent is installed!${NC}"
 echo -e "${GREEN}════════════════════════════════════════════════════${NC}"
 echo ""
 echo "  Next steps:"
 echo "    1. (Optional) Add API keys:  nano .env"
-echo "    2. Start Jansky:"
+echo "    2. Start Morris Agent:"
 echo "         source venv313/bin/activate"
 echo "         python orchestrator.py"
 echo ""
-echo "  Say \"Hey Jansky\" and start talking!"
+echo "  Say \"Morris\" and start talking!"
 echo ""

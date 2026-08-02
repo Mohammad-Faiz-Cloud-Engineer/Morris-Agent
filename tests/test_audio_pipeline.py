@@ -19,7 +19,7 @@ def test_tts():
     
     try:
         tts = PiperTTS()
-        audio_path = tts.synthesize("Hello! I am Jansky, your personal assistant.")
+        audio_path = tts.synthesize("Hello! I am Morris Agent, your personal assistant.")
         
         audio = AudioManager()
         audio.play_wav(audio_path)

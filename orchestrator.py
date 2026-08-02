@@ -48,7 +48,7 @@ class Orchestrator:
         self.ui = None
 
         # Initialize components
-        print("Initializing Jansky...")
+        print("Initializing Morris Agent...")
 
         # Audio
         print("  - Audio manager")
@@ -169,12 +169,12 @@ class Orchestrator:
 
         # Speak startup message BEFORE starting wake word detection
         # (otherwise the speaker saying "Hey Jarvis" triggers the detector)
-        self._speak(f"Hello! I'm Jansky. Say {self.wake_word.wake_phrase} to get my attention.")
+        self._speak(f"Hello! I'm Morris Agent. Say {self.wake_word.wake_phrase} to get my attention.")
 
         # Start wake word detection after greeting finishes
         self.wake_word.start(callback=self._on_wake_word)
 
-        print(f"Jansky is running. Say '{self.wake_word.wake_phrase}' to activate.")
+        print(f"Morris Agent is running. Say '{self.wake_word.wake_phrase}' to activate.")
         print("Press Ctrl+C to exit.")
 
         # Main loop
@@ -289,7 +289,7 @@ class Orchestrator:
         if "on camera" in text.lower():
             print("[custom] on camera introduction")
             self._speak(
-                "Hey all, I am Jansky, Mayukh's personal AI assistant "
+                "Hey all, I am Morris Agent, Mayukh's personal AI assistant "
                 "running 24 7 on the desk helping with all his daily chores! "
                 "Its great to meet you all"
             )

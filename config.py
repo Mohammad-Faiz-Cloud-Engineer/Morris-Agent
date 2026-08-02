@@ -1,8 +1,8 @@
-"""Portable runtime configuration for Jansky.
+"""Portable runtime configuration for Morris Agent.
 
 All paths are rooted at this checkout by default.  They can be overridden in
 ``config/config.json`` or with environment variables, so the same checkout
-works on Windows, macOS, Debian, Arch, and Raspberry Pi OS.
+works on Windows, macOS, and Linux (Debian/Ubuntu and Arch).
 """
 
 import json
@@ -34,7 +34,7 @@ class Config:
     stt_backend: str = "auto"  # auto, whisper_cpp, or faster_whisper
     stt_model_name: str = "base.en"  # Used by faster-whisper.
     chat_model: str = "qwen2.5:1.5b"
-    wake_word_model: str = _default_path("models", "wake_word", "Hey_Jansky.onnx")
+    wake_word_model: str = _default_path("models", "wake_word", "Morris.onnx")
     wake_word_threshold: float = 0.5
 
     # An empty device value uses the operating system's default device.  A
@@ -61,13 +61,13 @@ class Config:
     def load(cls, config_path: Optional[str] = None) -> "Config":
         """Load JSON and .env values, resolving relative paths safely."""
         config = cls()
-        root_override = os.getenv("JANSKY_PROJECT_ROOT")
+        root_override = os.getenv("MORRIS_PROJECT_ROOT")
         if root_override:
             config.project_root = str(Path(root_override).expanduser().resolve())
 
         if config_path is None:
             config_path = os.getenv(
-                "JANSKY_CONFIG",
+                "MORRIS_CONFIG",
                 str(Path(config.project_root) / "config" / "config.json"),
             )
 

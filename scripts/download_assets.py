@@ -28,7 +28,7 @@ def main() -> None:
     voice_directory.mkdir(parents=True, exist_ok=True)
     download(VOICE_BASE_URL, voice_directory / "en_GB-semaine-medium.onnx")
     download(f"{VOICE_BASE_URL}.json", voice_directory / "en_GB-semaine-medium.onnx.json")
-    print("Piper voice is ready. Add models/wake_word/Hey_Jansky.onnx for the custom wake word.")
+    print("Piper voice is ready. Add models/wake_word/Morris.onnx for the custom wake word.")
 
 
 if __name__ == "__main__":

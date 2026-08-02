@@ -6,7 +6,7 @@
   "stt_backend": "auto",
   "stt_model_name": "base.en",
   "chat_model": "qwen2.5:1.5b",
-  "wake_word_model": "models/wake_word/Hey_Jansky.onnx",
+  "wake_word_model": "models/wake_word/Morris.onnx",
   "wake_word_threshold": 0.5,
   "microphone_device": "",
   "speaker_device": "",

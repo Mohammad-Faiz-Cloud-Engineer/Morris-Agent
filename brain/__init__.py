@@ -1,4 +1,4 @@
-# Brain module for Jansky voice assistant
+# Brain module for Morris Agent
 from .ollama_client import OllamaClient
 from .router import Router, ToolType, RouterResult
 from .tool_definitions import TOOLS, SYSTEM_PROMPT

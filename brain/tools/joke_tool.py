@@ -28,4 +28,4 @@ def get_joke() -> str:
         return "I tried to think of a joke, but my circuits got crossed."
 
     except Exception:
-        return "Sorry, I couldn't fetch a joke right now. But you know what's funny? A Raspberry Pi trying to be a comedian."
+        return "Sorry, I couldn't fetch a joke right now. But you know what's funny? A voice assistant trying to be a comedian."

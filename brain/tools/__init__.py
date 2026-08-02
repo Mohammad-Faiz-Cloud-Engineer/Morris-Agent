@@ -1,4 +1,4 @@
-# Tools module for Jansky
+# Tools module for Morris Agent
 from .time_tool import get_current_time
 from .weather_tool import WeatherTool
 

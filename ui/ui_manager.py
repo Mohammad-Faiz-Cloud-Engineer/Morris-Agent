@@ -97,7 +97,7 @@ class UIManager:
                 (self.width, self.height),
                 pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF
             )
-            pygame.display.set_caption("Jansky")
+            pygame.display.set_caption("Morris Agent")
             print(f"    Display driver: {pygame.display.get_driver()}")
         except pygame.error as e:
             print(f"    Wayland display failed: {e}, UI disabled")

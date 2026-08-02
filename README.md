@@ -2,14 +2,13 @@
 
 Morris Agent is a wake-word voice assistant built around a local Ollama model. It
 records speech, transcribes it, routes requests to local tools or a cloud
-model, and speaks the response through Piper TTS. The project began as a
-Raspberry Pi 5 assistant named **Morris**, after radio-astronomy pioneer
-[Karl Jansky](https://en.wikipedia.org/wiki/Karl_Guthe_Jansky).
+model, and speaks the response through Piper TTS. The project began as an
+assistant named **Morris**.
 
-> Status: Raspberry Pi OS is the original deployment target. Native bootstrap
-> scripts are provided for Windows, macOS, Debian/Ubuntu, and Arch Linux, but
-> the full microphone → wake word → STT → TTS → UI workflow must be validated
-> on each target machine before it is treated as production-ready.
+> Status: Cross-platform. The same checkout runs on Windows (ARM + x86/x64),
+> macOS, and Linux (Debian/Ubuntu and Arch). After first setup, validate the
+> full microphone → wake word → STT → TTS → UI workflow on the target machine
+> before treating it as production-ready.
 
 ## What it does
 
@@ -63,7 +62,7 @@ flowchart TD
 
 ## Before you start
 
-PiBot is not self-contained: the repository intentionally excludes large model
+Morris Agent is not self-contained: the repository intentionally excludes large model
 and voice assets. A runnable installation needs all of the following:
 
 - Python 3.9 or newer
@@ -73,25 +72,24 @@ and voice assets. A runnable installation needs all of the following:
   - `whisper.cpp` executable plus a local GGML model, or
   - faster-whisper with access to its model on first use
 - A microphone and speaker selected by the operating system
-- Optional: `models/wake_word/Hey_Jansky.onnx` for the intended custom wake
-  phrase
+- Optional: `models/wake_word/Morris.onnx` for the intended custom wake word
 
 The first installation requires internet access to install packages and obtain
 models. Runtime capabilities that call weather, news, jokes, or cloud AI also
 require internet access.
 
-## Raspberry Pi OS setup
+## Linux setup (one-command)
 
-The original one-command installer targets Raspberry Pi OS / Debian:
+The one-command installer targets Debian-based Linux:
 
 ```bash
-git clone https://github.com/mayukh4/pibot_local_agent.git
-cd pibot_local_agent
+git clone https://github.com/Mohammad-Faiz-Cloud-Engineer/Morris-Agent.git
+cd Morris-Agent
 chmod +x setup.sh
 ./setup.sh
 ```
 
-It creates `venv313`, installs the Pi-oriented dependencies, installs Ollama,
+It creates `venv313`, installs the Linux dependencies, installs Ollama,
 builds whisper.cpp, and downloads the Piper voice. Then run:
 
 ```bash
@@ -99,9 +97,9 @@ source venv313/bin/activate
 python orchestrator.py
 ```
 
-If no custom Jansky wake-word model is present, startup announces the fallback
-phrase **“Hey Jarvis”**. Do not assume that “Hey Jansky” is active until
-`models/wake_word/Hey_Jansky.onnx` has been installed and startup confirms it.
+If no custom Morris wake-word model is present, startup announces the fallback
+phrase **“Hey Jarvis”**. Do not assume that the word **“Morris”** is active until
+`models/wake_word/Morris.onnx` has been installed and startup confirms it.
 
 ## Desktop bootstrap
 
@@ -124,7 +122,7 @@ model:
 ollama pull qwen2.5:1.5b
 ```
 
-Start PiBot with the Python interpreter in `.venv`:
+Start Morris Agent with the Python interpreter in `.venv`:
 
 ```bash
 # Linux or macOS
@@ -159,7 +157,7 @@ system defaults. To choose a specific device, set either field to a
 sounddevice index or a unique, case-insensitive fragment of its name.
 
 Set `mic_sample_rate` to `0` to use the input device’s reported native sample
-rate. PiBot resamples captured audio to `target_sample_rate` for STT and wake
+rate. Morris Agent resamples captured audio to `target_sample_rate` for STT and wake
 word inference.
 
 ### STT backend selection
@@ -179,8 +177,8 @@ run download in production.
 
 `enable_ui` disables the face UI entirely when set to `false`.
 
-`use_framebuffer` is intended only for a Linux framebuffer device such as a
-headless Raspberry Pi display. Leave it `false` on Windows, macOS, and normal
+`use_framebuffer` is intended only for a Linux framebuffer device, such as a
+headless display. Leave it `false` on Windows, macOS, and normal
 Linux desktop sessions so SDL can choose the native display driver.
 
 ## Optional API keys
@@ -219,7 +217,7 @@ The supplied tests are interactive component checks, not a complete automated
 or cross-platform test suite:
 
 ```bash
-# Raspberry Pi installation
+# Linux installation (Debian-based)
 source venv313/bin/activate
 
 python tests/test_router.py
