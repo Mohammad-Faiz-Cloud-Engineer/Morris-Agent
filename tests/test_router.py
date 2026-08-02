@@ -33,7 +33,7 @@ def test_router():
         ("What time is it?", ToolType.TIME),
         ("What's the weather in London?", ToolType.WEATHER),
         ("Write me a poem about stars", ToolType.CLOUD),
-        ("Tell me a joke", ToolType.NONE),
+        ("Tell me a joke", ToolType.JOKE),
     ]
     
     print("\nTesting router decisions...\n")
