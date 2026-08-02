@@ -85,8 +85,8 @@ The one-command installer targets Debian-based Linux:
 ```bash
 git clone https://github.com/Mohammad-Faiz-Cloud-Engineer/Morris-Agent.git
 cd Morris-Agent
-chmod +x setup.sh
-./setup.sh
+chmod +x scripts/setup_raspi.sh
+./scripts/setup_raspi.sh
 ```
 
 It creates `venv313`, installs the Linux dependencies, installs Ollama,

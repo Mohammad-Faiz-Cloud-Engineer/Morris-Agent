@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ==============================================================
-#  Morris Agent — One-Command Installer for Debian-based Linux
+#  Morris Agent — One-Command Installer for Raspberry Pi OS / Debian
 # ==============================================================
-#  Usage:  chmod +x setup.sh && ./setup.sh
+#  Usage:  chmod +x scripts/setup_raspi.sh && ./scripts/setup_raspi.sh
 #
 #  What this script does (in order):
 #   1. Installs system packages (apt)
@@ -17,7 +17,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$REPO_ROOT"
 
 # ── colours ───────────────────────────────────────────────────
 GREEN='\033[0;32m'
@@ -93,7 +94,7 @@ if [ ! -f "/usr/local/bin/whisper-cpp" ]; then
     ./build/bin/quantize models/ggml-base.en.bin models/ggml-base.en-q5_0.bin q5_0
     ok "Whisper model quantised (q5_0)"
   fi
-  cd "$SCRIPT_DIR"
+  cd "$REPO_ROOT"
 else
   ok "Whisper.cpp already installed"
 fi

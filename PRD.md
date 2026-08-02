@@ -199,12 +199,12 @@ THINKING → ERROR → IDLE            (processing exception)
 
 | Component | Technology | Version/Model | Installation |
 |-----------|------------|---------------|--------------|
-| Runtime | Python | 3.9+ (Pi script provisions 3.13) | `setup.sh` / desktop scripts |
+| Runtime | Python | 3.9+ (Pi script provisions 3.13) | `scripts/setup_raspi.sh` / desktop scripts |
 | Orchestrator | Custom Python | - | `orchestrator.py` |
 | Model Runtime | Ollama | Latest | `curl -fsSL https://ollama.com/install.sh \| sh` |
 | Local LLM | Qwen2.5:1.5b | `qwen2.5:1.5b` | `ollama pull qwen2.5:1.5b` |
 | Wake Word | openWakeWord + onnxruntime | 0.6+ / 1.18+ | `pip install openwakeword onnxruntime` |
-| STT | whisper.cpp `whisper-cli` OR faster-whisper | `base.en-q5_0` / `base.en` | built by `setup.sh` or `pip install faster-whisper` |
+| STT | whisper.cpp `whisper-cli` OR faster-whisper | `base.en-q5_0` / `base.en` | built by `scripts/setup_raspi.sh` or `pip install faster-whisper` |
 | TTS | Piper Python package | `piper-tts>=1.2` | `pip install piper-tts` |
 | Voice | `en_GB-semaine-medium` | ONNX + `.onnx.json` | downloaded by setup scripts |
 | UI | PyGame | 2.5+ | `pip install pygame` |
@@ -214,16 +214,16 @@ THINKING → ERROR → IDLE            (processing exception)
 
 ### 4.2 Installation
 
-#### 4.2.1 Debian-based Linux (one-command `setup.sh`)
+#### 4.2.1 Debian-based Linux (one-command `scripts/setup_raspi.sh`)
 
 ```bash
 git clone <repo-url>
 cd <repo>
-chmod +x setup.sh
-./setup.sh
+chmod +x scripts/setup_raspi.sh
+./scripts/setup_raspi.sh
 ```
 
-What `setup.sh` does in order:
+What `scripts/setup_raspi.sh` does in order:
 
 1. `apt` installs: Python tooling, build tools, SDL2, PortAudio, ALSA utilities
 2. Creates `venv313` and installs Python deps (`httpx sounddevice numpy piper-tts openwakeword onnxruntime pygame`)
@@ -402,8 +402,14 @@ sudo journalctl -u morris-agent.service -f
 ├── config.py                     Portable runtime config loader
 ├── orchestrator.py                Main entry point
 ├── requirements.txt               Python dependencies
-├── setup.sh                      One-command Debian-based Linux installer
 ├── .env.example                  API-key template
+├── scripts/                      Bootstrap scripts
+│   ├── setup_raspi.sh            One-command Debian/Raspberry Pi OS installer
+│   ├── setup_windows.ps1
+│   ├── setup_macos.sh
+│   ├── setup_debian.sh
+│   ├── setup_arch.sh
+│   └── download_assets.py
 ├── config/
 │   ├── config.json               Runtime settings & paths
 │   ├── local_soul.md             Local LLM personality
@@ -439,12 +445,6 @@ sudo journalctl -u morris-agent.service -f
 │   └── wake_word/Morris.onnx
 ├── piper/voices/                en_GB-semaine-medium.onnx (+.onnx.json)
 ├── whisper.cpp/                 Clone + downloaded models (built by setup)
-├── scripts/
-│   ├── setup_windows.ps1
-│   ├── setup_macos.sh
-│   ├── setup_debian.sh
-│   ├── setup_arch.sh
-│   └── download_assets.py
 └── tests/
     ├── test_audio_pipeline.py
     ├── test_wake_word.py
@@ -660,7 +660,7 @@ python tests/test_audio_pipeline.py
 # Debian-based Linux (one-command)
 git clone <repo-url>
 cd <repo>
-chmod +x setup.sh && ./setup.sh
+chmod +x scripts/setup_raspi.sh && ./scripts/setup_raspi.sh
 source venv313/bin/activate
 python orchestrator.py
 
