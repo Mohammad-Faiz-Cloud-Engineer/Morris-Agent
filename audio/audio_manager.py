@@ -19,7 +19,7 @@ DeviceSelector = Optional[Union[int, str]]
 
 def list_audio_devices() -> list[dict]:
     """Return portable audio-device metadata for setup and diagnostics."""
-    return [dict(index=index, **dict(device)) for index, device in enumerate(sd.query_devices())]
+    return [{**dict(device), "index": index} for index, device in enumerate(sd.query_devices())]
 
 
 def resolve_audio_device(selector: DeviceSelector, kind: str) -> Optional[int]:

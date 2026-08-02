@@ -9,7 +9,6 @@ import signal
 import time
 import random
 from pathlib import Path
-from typing import Optional
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).parent
@@ -142,7 +141,6 @@ class Orchestrator:
 
         # Load pre-generated filler WAVs
         self._filler_wavs = {}
-        fillers_dir = os.path.join(config.project_root, "assets", "fillers")
         for phrase, rel_path in FILLER_WAVS.items():
             abs_path = os.path.join(config.project_root, rel_path)
             if os.path.exists(abs_path):
@@ -365,6 +363,10 @@ class Orchestrator:
         try:
             audio_path = self.tts.synthesize(text)
             self.audio.play_wav(audio_path)
+            try:
+                os.unlink(audio_path)
+            except OSError:
+                pass
         except Exception as e:
             print(f"TTS error: {e}")
 

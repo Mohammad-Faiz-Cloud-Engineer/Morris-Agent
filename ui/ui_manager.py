@@ -6,10 +6,9 @@ import os
 import platform
 import pygame
 from enum import Enum
-from typing import Optional, Tuple, Dict
+from typing import Optional, Dict
 from pathlib import Path
 from threading import Thread, Lock, Event
-import time
 import math
 
 

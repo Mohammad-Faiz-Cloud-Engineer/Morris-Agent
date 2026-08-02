@@ -7,7 +7,7 @@ import tempfile
 import os
 import wave
 from pathlib import Path
-from typing import Optional, Generator
+from typing import Optional
 
 # Use piper-tts Python package
 try:

@@ -258,4 +258,4 @@ Before a deployment, verify these real device paths on the target machine:
 
 ## License
 
-MIT
+BSD 2-Clause License (see [LICENSE](LICENSE)).

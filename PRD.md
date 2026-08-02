@@ -205,7 +205,7 @@ THINKING → ERROR → IDLE            (processing exception)
 | Local LLM | Qwen2.5:1.5b | `qwen2.5:1.5b` | `ollama pull qwen2.5:1.5b` |
 | Wake Word | openWakeWord + onnxruntime | 0.6+ / 1.18+ | `pip install openwakeword onnxruntime` |
 | STT | whisper.cpp `whisper-cli` OR faster-whisper | `base.en-q5_0` / `base.en` | built by `scripts/setup_raspi.sh` or `pip install faster-whisper` |
-| TTS | Piper Python package | `piper-tts>=1.2` | `pip install piper-tts` |
+| TTS | Piper Python package | `piper-tts>=1.3` | `pip install piper-tts` |
 | Voice | `en_GB-semaine-medium` | ONNX + `.onnx.json` | downloaded by setup scripts |
 | UI | PyGame | 2.5+ | `pip install pygame` |
 | HTTP Client | httpx | 0.27+ | `pip install httpx` |
@@ -398,7 +398,7 @@ sudo journalctl -u morris-agent.service -f
 .
 ├── README.md                     Project overview + setup
 ├── PRD.md                        This document
-├── LICENSE                       MIT
+├── LICENSE                       BSD-2-Clause
 ├── config.py                     Portable runtime config loader
 ├── orchestrator.py                Main entry point
 ├── requirements.txt               Python dependencies

@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $Python = Get-Command py -ErrorAction SilentlyContinue
 if (-not $Python) {
-    throw "Python 3.11 or later is required. Install it from https://www.python.org/downloads/windows/ and re-run."
+    throw "Python 3.9 or later is required. Install it from https://www.python.org/downloads/windows/ and re-run."
 }
 
 & py -3 -m venv "$ProjectRoot\.venv"

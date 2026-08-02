@@ -4,11 +4,11 @@ Includes text-based tool detection fallback for smaller models.
 """
 
 import re
-from typing import Optional, Tuple, Any
+from typing import Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
 
-from .ollama_client import OllamaClient, ChatResponse
+from .ollama_client import OllamaClient
 from .tool_definitions import TOOLS, SYSTEM_PROMPT
 
 
