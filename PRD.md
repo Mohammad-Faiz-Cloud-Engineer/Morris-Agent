@@ -334,7 +334,7 @@ Key method: `record_until_silence(silence_threshold, silence_duration, max_durat
 
 `brain/ollama_client.py` — Ollama `/api/chat` wrapper with tool-call parsing (handles raw-argument strings) and `/api/tags` availability probe.
 
-`brain/router.py` — sends the system prompt plus conversation history and the six tool schemas to Ollama; if the model emits a JSON tool call it uses that, otherwise it falls back to keyword phrase matching (`TIME_PHRASES`, `WEATHER_PHRASES`, `NEWS_PHRASES`, `SYSTEM_PHRASES`, `JOKE_PHRASES`) and a "simple chat" shortlist, then a default cloud handoff. This text fallback is what lets the 1.5B model route reliably.
+`brain/router.py` — sends the system prompt plus conversation history and the six tool schemas to Ollama; if the model emits a JSON tool call it uses that, otherwise it falls back to keyword phrase matching (`TIME_PHRASES`, `WEATHER_PHRASES`, `NEWS_PHRASES`, `SYSTEM_PHRASES`, `JOKE_PHRASES`) and a "simple chat" shortlist. The local model answers everything it can; it uses the `cloud_handoff` tool (or signals a handoff in its reply) only for questions it judges too complex or technical to answer accurately. This text fallback is what lets the 1.5B model route reliably.
 
 `brain/tools/` — `time_tool.py` (stdlib), `weather_tool.py` (OpenWeatherMap), `news_tool.py` (NewsAPI), `system_tool.py` (psutil), `joke_tool.py` (Official Joke API). Cloud calls go through `brain/openai_client.py` (any OpenAI-compatible `.../chat/completions` endpoint).
 

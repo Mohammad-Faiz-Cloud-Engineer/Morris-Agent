@@ -55,9 +55,11 @@ class Router:
     def _is_local_chat(self, user_input: str) -> bool:
         """Check if the input is simple enough for the local model."""
         user_lower = user_input.lower().strip()
-        # Short greetings / simple chat
+        # A greeting/phrase only counts when it starts the input, so "hi"
+        # inside "what is this" or "help" inside a complex question is never
+        # mistaken for a simple chat request.
         for phrase in self.LOCAL_PHRASES:
-            if phrase in user_lower:
+            if user_lower.startswith(phrase):
                 return True
         # Very short inputs (1-3 words) that aren't questions are likely greetings
         words = user_lower.split()
@@ -131,12 +133,16 @@ class Router:
             if phrase in user_lower:
                 return ToolType.SYSTEM_STATUS, {}
 
-        # Priority 3: If it's simple chat, keep local
+        # Priority 3: The model produced a real answer — keep it local
+        if response_text and response_text.strip():
+            return ToolType.NONE, {}
+
+        # Priority 4: If it's simple chat, keep local
         if self._is_local_chat(user_input):
             return ToolType.NONE, {}
 
-        # Priority 4: Everything else → cloud handoff
-        # The local 1.5B model can't reliably answer knowledge/technical questions
+        # Priority 5: The local model produced nothing useful (no tool call,
+        # no answer) — ask the cloud so the user never gets silence.
         return ToolType.CLOUD, {"query": user_input}
 
     def _extract_location(self, user_input: str, response_text: str) -> str:
