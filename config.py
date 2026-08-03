@@ -48,13 +48,11 @@ class Config:
     openweather_api_key: str = ""
     moonshot_api_key: str = ""
     newsapi_key: str = ""
-    local_soul_path: str = _default_path("config", "local_soul.md")
     cloud_soul_path: str = _default_path("config", "cloud_soul.md")
 
     display_width: int = 800
     display_height: int = 480
     use_framebuffer: bool = False  # Set true only for a Linux Pi framebuffer.
-    enable_streaming_tts: bool = False
     enable_ui: bool = True
 
     @classmethod
@@ -96,7 +94,7 @@ class Config:
         root = Path(self.project_root)
         for field_name in (
             "assets_path", "piper_voice", "whisper_model", "wake_word_model",
-            "local_soul_path", "cloud_soul_path",
+            "cloud_soul_path",
         ):
             value = Path(getattr(self, field_name)).expanduser()
             if not value.is_absolute():

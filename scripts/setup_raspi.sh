@@ -6,7 +6,7 @@
 #
 #  What this script does (in order):
 #   1. Installs system packages (apt)
-#   2. Creates a Python 3.13 virtual environment
+#   2. Creates a Python virtual environment with the system Python 3
 #   3. Installs Python dependencies (pip)
 #   4. Installs Ollama and pulls Qwen 2.5:1.5b
 #   5. Builds Whisper.cpp from source and downloads the model

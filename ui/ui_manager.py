@@ -1,5 +1,5 @@
 """
-PyGame-based UI manager for Wayland display.
+PyGame-based UI manager for the optional animated face display.
 """
 
 import os
@@ -29,7 +29,7 @@ class UIManager:
         height: int = 480,
         assets_path: str = "",
         fps: int = 30,
-        use_framebuffer: bool = True
+        use_framebuffer: bool = False
     ):
         self.width = width
         self.height = height
@@ -99,7 +99,7 @@ class UIManager:
             pygame.display.set_caption("Morris Agent")
             print(f"    Display driver: {pygame.display.get_driver()}")
         except pygame.error as e:
-            print(f"    Wayland display failed: {e}, UI disabled")
+            print(f"    Display initialization failed: {e}, UI disabled")
             self._ready.set()
             return
         

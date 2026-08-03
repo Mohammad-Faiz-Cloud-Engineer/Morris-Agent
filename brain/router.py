@@ -142,7 +142,7 @@ class Router:
     def _extract_location(self, user_input: str, response_text: str) -> str:
         """Extract location from user input or response."""
         # Try to find location in model response
-        match = re.search(r'location["\s=:]+["\']*([^"\'\]\s,]+)', response_text, re.IGNORECASE)
+        match = re.search(r'location["\s=:]+["\']*([^"\'\]\s,]+)', response_text or "", re.IGNORECASE)
         if match:
             return match.group(1)
 

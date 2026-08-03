@@ -13,9 +13,9 @@ def get_joke() -> str:
         A joke formatted for speech (setup + punchline).
     """
     try:
-        client = httpx.Client(timeout=5.0)
-        response = client.get(
-            "https://official-joke-api.appspot.com/random_joke"
+        response = httpx.get(
+            "https://official-joke-api.appspot.com/random_joke",
+            timeout=5.0,
         )
         response.raise_for_status()
         data = response.json()

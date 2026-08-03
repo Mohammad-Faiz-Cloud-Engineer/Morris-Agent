@@ -37,6 +37,9 @@ class PiperTTS:
         self.speaker_id = speaker_id
         self._voice = None
         
+        if speaking_rate <= 0:
+            raise ValueError("speaking_rate must be greater than 0")
+
         # Verify model exists
         if not Path(model_path).exists():
             raise FileNotFoundError(f"Voice model not found at {model_path}")
@@ -63,7 +66,11 @@ class PiperTTS:
             os.close(fd)
         
         # Use piper-tts 1.4.1 API: synthesize_wav handles wav format automatically
-        syn_config = SynthesisConfig(speaker_id=self.speaker_id)
+        # length_scale is piper's time scaling: 1.0/speaking_rate (rate 2.0 = twice as fast).
+        syn_config = SynthesisConfig(
+            speaker_id=self.speaker_id,
+            length_scale=1.0 / self.speaking_rate,
+        )
         with wave.open(output_path, "wb") as wav_file:
             self._voice.synthesize_wav(text, wav_file, syn_config=syn_config)
         
@@ -81,7 +88,10 @@ class PiperTTS:
         """
         # Collect raw PCM from the streaming synthesize() iterator
         audio_parts = []
-        syn_config = SynthesisConfig(speaker_id=self.speaker_id)
+        syn_config = SynthesisConfig(
+            speaker_id=self.speaker_id,
+            length_scale=1.0 / self.speaking_rate,
+        )
         for chunk in self._voice.synthesize(text, syn_config=syn_config):
             audio_parts.append(chunk.audio_int16_bytes)
         

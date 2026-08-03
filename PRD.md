@@ -199,7 +199,7 @@ THINKING → ERROR → IDLE            (processing exception)
 
 | Component | Technology | Version/Model | Installation |
 |-----------|------------|---------------|--------------|
-| Runtime | Python | 3.9+ (Pi script provisions 3.13) | `scripts/setup_raspi.sh` / desktop scripts |
+| Runtime | Python | 3.9+ (Pi script uses the system Python 3) | `scripts/setup_raspi.sh` / desktop scripts |
 | Orchestrator | Custom Python | - | `orchestrator.py` |
 | Model Runtime | Ollama | Latest | `curl -fsSL https://ollama.com/install.sh \| sh` |
 | Local LLM | Qwen2.5:1.5b | `qwen2.5:1.5b` | `ollama pull qwen2.5:1.5b` |
@@ -412,7 +412,6 @@ sudo journalctl -u morris-agent.service -f
 │   └── download_assets.py
 ├── config/
 │   ├── config.json               Runtime settings & paths
-│   ├── local_soul.md             Local LLM personality
 │   └── cloud_soul.md             Cloud LLM personality
 ├── audio/
 │   ├── __init__.py
@@ -482,12 +481,10 @@ Keys are optional; missing-key tools reply with a configuration message.
   "speaker_device": "",
   "mic_sample_rate": 0,
   "target_sample_rate": 16000,
-  "local_soul_path": "config/local_soul.md",
   "cloud_soul_path": "config/cloud_soul.md",
   "display_width": 800,
   "display_height": 480,
   "use_framebuffer": false,
-  "enable_streaming_tts": false,
   "enable_ui": true,
   "local_location": "Kingston, CA"
 }

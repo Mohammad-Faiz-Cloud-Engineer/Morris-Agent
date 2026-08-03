@@ -4,7 +4,7 @@ Ollama API client with tool calling support.
 
 import httpx
 import json
-from typing import Optional, Dict, Any, List, Generator
+from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
 
 
@@ -99,32 +99,6 @@ class OllamaClient:
             tool_calls=tool_calls,
             is_tool_call=len(tool_calls) > 0
         )
-    
-    def chat_stream(
-        self,
-        messages: List[Dict[str, str]]
-    ) -> Generator[str, None, None]:
-        """
-        Stream chat completion response.
-        
-        Yields content chunks as they arrive.
-        """
-        payload = {
-            "model": self.model,
-            "messages": messages,
-            "stream": True
-        }
-        
-        with self.client.stream(
-            "POST",
-            f"{self.base_url}/api/chat",
-            json=payload
-        ) as response:
-            for line in response.iter_lines():
-                if line:
-                    data = json.loads(line)
-                    if "message" in data and "content" in data["message"]:
-                        yield data["message"]["content"]
     
     def is_available(self) -> bool:
         """Check if Ollama is running."""

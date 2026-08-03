@@ -195,10 +195,23 @@ class Orchestrator:
             self.ui.stop()
 
     def _on_wake_word(self):
-        """Called when wake word is detected."""
+        """Called when wake word is detected (runs on the wake-word thread)."""
         if not self._running:
             return
+        try:
+            self._handle_wake_interaction()
+        except Exception as error:
+            print(f"Wake interaction error: {error}")
+            self._speak("Sorry, something went wrong.")
+        finally:
+            # Always restore a listening state — even after an error — so the
+            # wake-word thread is never left paused or killed by an exception.
+            if self.ui:
+                self.ui.set_state(self.UIState.IDLE)
+            self.wake_word.resume()
 
+    def _handle_wake_interaction(self):
+        """Record, transcribe, and respond to a single wake-word interaction."""
         print("Wake word detected!")
 
         # Clear conversation history — each wake word is a fresh interaction

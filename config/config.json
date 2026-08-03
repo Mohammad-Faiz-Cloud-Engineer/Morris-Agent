@@ -12,12 +12,10 @@
   "speaker_device": "",
   "mic_sample_rate": 0,
   "target_sample_rate": 16000,
-  "local_soul_path": "config/local_soul.md",
   "cloud_soul_path": "config/cloud_soul.md",
   "display_width": 800,
   "display_height": 480,
   "use_framebuffer": false,
-  "enable_streaming_tts": false,
   "enable_ui": true,
   "local_location": "Kingston, CA"
 }

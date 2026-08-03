@@ -141,4 +141,8 @@ class WakeWordDetector:
             if detected and self._callback:
                 self.pause()
                 self.model.reset()
-                self._callback()
+                try:
+                    self._callback()
+                except Exception as error:
+                    # Never let a callback failure kill the listen thread.
+                    print(f"Wake-word callback error: {error}")
