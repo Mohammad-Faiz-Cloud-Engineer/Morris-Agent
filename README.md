@@ -65,7 +65,8 @@ flowchart TD
 Morris Agent is not self-contained: the repository intentionally excludes large model
 and voice assets. A runnable installation needs all of the following:
 
-- Python 3.9 or newer
+- Python 3.9 – 3.13 (3.14+ has no prebuilt wheels for several dependencies and
+  is rejected by the setup scripts)
 - Ollama and the `qwen2.5:1.5b` model
 - A Piper voice model and its adjacent `.onnx.json` metadata file
 - One STT backend and model:
@@ -114,6 +115,12 @@ pre-download a faster-whisper model or verify all hardware paths.
 | Debian / Ubuntu | `bash scripts/setup_debian.sh` |
 | Arch Linux | `bash scripts/setup_arch.sh` |
 | macOS with Homebrew | `bash scripts/setup_macos.sh` |
+
+The setup scripts reject a system Python newer than 3.13 with a clear error
+instead of failing mid-install, and the Windows script automatically selects
+the newest compatible Python 3.9 – 3.13 it finds. If no compatible Python is
+available, install one from <https://www.python.org/downloads/windows/> (3.12
+recommended) and re-run.
 
 Install Ollama if the selected script does not do so, then fetch the local
 model:

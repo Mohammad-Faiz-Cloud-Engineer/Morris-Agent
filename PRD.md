@@ -199,7 +199,7 @@ THINKING → ERROR → IDLE            (processing exception)
 
 | Component | Technology | Version/Model | Installation |
 |-----------|------------|---------------|--------------|
-| Runtime | Python | 3.9+ (Pi script uses the system Python 3) | `scripts/setup_raspi.sh` / desktop scripts |
+| Runtime | Python | 3.9 – 3.13 (3.14+ has no prebuilt wheels for pygame/faster-whisper/scipy; scripts reject it) | `scripts/setup_raspi.sh` / desktop scripts |
 | Orchestrator | Custom Python | - | `orchestrator.py` |
 | Model Runtime | Ollama | Latest | `curl -fsSL https://ollama.com/install.sh \| sh` |
 | Local LLM | Qwen2.5:1.5b | `qwen2.5:1.5b` | `ollama pull qwen2.5:1.5b` |

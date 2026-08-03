@@ -2,7 +2,23 @@
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
 sudo pacman -Syu --needed python python-pip portaudio sdl2 ffmpeg
+
+# Reject Python versions without prebuilt wheels (pygame, faster-whisper,
+# scipy have none for 3.14+), so users get a clear message instead of a
+# silent mid-install compile failure.  Runs after `pacman -Syu python` so a
+# fresh machine without Python still gets it installed first.
+PY_VERSION="$(python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo unknown)"
+case "$PY_VERSION" in
+  3.9|3.10|3.11|3.12|3.13) ;;
+  *)
+    echo "Morris Agent needs Python 3.9 - 3.13 (found $PY_VERSION)." >&2
+    echo "Install a supported Python 3 and re-run this script." >&2
+    exit 1
+    ;;
+esac
+
 python -m venv "$PROJECT_ROOT/.venv"
 "$PROJECT_ROOT/.venv/bin/python" -m pip install --upgrade pip
 "$PROJECT_ROOT/.venv/bin/python" -m pip install -r "$PROJECT_ROOT/requirements.txt"
