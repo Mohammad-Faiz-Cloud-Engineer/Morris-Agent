@@ -160,9 +160,9 @@ Invoke-Checked -File $VenvPython -Arguments @("-m", "pip", "install", "-r", (Joi
 Invoke-Checked -File $VenvPython -Arguments @("-c", "import numpy, pygame, sounddevice, faster_whisper, openwakeword, piper; print('Dependency import check passed.')") -ErrorMessage "Installed packages failed to import."
 
 # ---------------------------------------------------------------------------
-# 5. Download the Piper voice model.
+# 5. Download the Piper voice and openwakeword fallback models.
 # ---------------------------------------------------------------------------
-Invoke-Checked -File $VenvPython -Arguments @((Join-Path $ProjectRoot "scripts\download_assets.py"), "--project-root", $ProjectRoot) -ErrorMessage "Failed to download the Piper voice."
+Invoke-Checked -File $VenvPython -Arguments @((Join-Path $ProjectRoot "scripts\download_assets.py"), "--project-root", $ProjectRoot) -ErrorMessage "Failed to download runtime assets (Piper voice / openwakeword models)."
 
 # ---------------------------------------------------------------------------
 # 6. Optional: install Ollama via winget.

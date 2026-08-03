@@ -49,7 +49,7 @@ class WakeWordDetector:
 
         custom_model = Path(model_path).expanduser() if model_path else None
         if custom_model and custom_model.exists():
-            self.model = Model(wakeword_model_paths=[str(custom_model)])
+            self.model = Model(wakeword_models=[str(custom_model)])
             self.wake_phrase = "Morris"
             print(f"    Wake word model: {custom_model.name}")
         elif allow_builtin_fallback:
@@ -58,8 +58,22 @@ class WakeWordDetector:
             package_models = Path(openwakeword.__file__).parent / "resources" / "models"
             fallback = next(package_models.glob("hey_jarvis*.onnx"), None)
             if fallback is None:
-                raise FileNotFoundError("No bundled openWakeWord fallback model was found.")
-            self.model = Model(wakeword_model_paths=[str(fallback)])
+                # The pip wheel ships without model weights; fetch the official
+                # fallback once so a clean checkout still works.
+                print("    Downloading built-in 'Hey Jarvis' wake-word model...")
+                try:
+                    from openwakeword.utils import download_models
+                    package_models.mkdir(parents=True, exist_ok=True)
+                    download_models(["hey_jarvis_v0.1"], target_directory=str(package_models))
+                except Exception as error:
+                    raise FileNotFoundError(
+                        f"No bundled openWakeWord fallback model was found and "
+                        f"downloading it failed ({error})."
+                    ) from error
+                fallback = next(package_models.glob("hey_jarvis*.onnx"), None)
+                if fallback is None:
+                    raise FileNotFoundError("No bundled openWakeWord fallback model was found.")
+            self.model = Model(wakeword_models=[str(fallback)])
             self.wake_phrase = "Hey Jarvis"
             print("    Warning: custom Morris model is missing; using built-in 'Hey Jarvis'.")
         else:

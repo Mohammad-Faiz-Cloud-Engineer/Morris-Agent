@@ -79,6 +79,13 @@ pip install -q \
   pygame
 ok "Python packages installed"
 
+# ── 3b. openwakeword fallback wake-word model ─────────────────
+# The pip wheel ships without model weights; the fallback 'Hey Jarvis' model
+# has to be fetched from the project's GitHub releases.
+info "Downloading openwakeword fallback wake-word model …"
+python -c "from openwakeword.utils import download_models; download_models(['hey_jarvis_v0.1'])"
+ok "openwakeword fallback wake-word model ready"
+
 # ── 4. Ollama + model ────────────────────────────────────────
 if ! command -v ollama &>/dev/null; then
   info "Installing Ollama …"
