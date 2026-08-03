@@ -49,7 +49,7 @@ Create a modular, local-first voice AI assistant that runs on any desktop or lap
 | TTS | Piper Python package (`piper-tts`) with `en_GB-semaine-medium` | In-process synthesis, ~50MB RAM, no external binary needed |
 | Wake Word | Custom openWakeWord `Morris.onnx`; bundled `Hey Jarvis` fallback | Trainable; a clean checkout works immediately |
 | Tools | time, weather, news, system status, joke, cloud handoff | Six schemas covering the assistant's capabilities |
-| Cloud API | Kimi K2 preview via `api.moonshot.ai` | High-quality complex question answering |
+| Cloud API | Any OpenAI-compatible provider (OpenAI, Groq, DeepSeek, Moonshot, vLLM, …) | High-quality complex question answering |
 | UI | PyGame; native SDL desktop driver, optional `fbcon` on headless Linux | Works on normal desktops and headless Linux |
 
 ---
@@ -125,7 +125,7 @@ aplay -l    # playback
 │       Tools: time · weather · news · system · joke · cloud      │
 │           │             │            │          │              │
 │           ▼             ▼            ▼          ▼              │
-│      datetime      OpenWeather    NewsAPI     Kimi K2           │
+│      datetime      OpenWeather    NewsAPI   OpenAI-compatible  │
 │       stdlib          API           API         API             │
 │       psutil       (optional)    (optional)   (optional)        │
 │                                                                  │
@@ -161,7 +161,7 @@ aplay -l    # playback
    CASE NEWS: `get_news` (category or general) → speech
    CASE SYSTEM_STATUS: `get_system_status` (CPU temp, RAM, uptime) → speech
    CASE JOKE: `get_joke` (Official Joke API) → speech
-   CASE CLOUD_HANDOFF: load cloud_soul.md → Kimi K2 → speech
+   CASE CLOUD_HANDOFF: load cloud_soul.md → OpenAI-compatible cloud → speech
    CASE direct chat (greetings/simple) → local Qwen reply → speech
    CASE "on camera": fixed introduction sentence → speech
 
@@ -336,7 +336,7 @@ Key method: `record_until_silence(silence_threshold, silence_duration, max_durat
 
 `brain/router.py` — sends the system prompt plus conversation history and the six tool schemas to Ollama; if the model emits a JSON tool call it uses that, otherwise it falls back to keyword phrase matching (`TIME_PHRASES`, `WEATHER_PHRASES`, `NEWS_PHRASES`, `SYSTEM_PHRASES`, `JOKE_PHRASES`) and a "simple chat" shortlist, then a default cloud handoff. This text fallback is what lets the 1.5B model route reliably.
 
-`brain/tools/` — `time_tool.py` (stdlib), `weather_tool.py` (OpenWeatherMap), `news_tool.py` (NewsAPI), `system_tool.py` (psutil), `joke_tool.py` (Official Joke API). Cloud calls go through `brain/cloud_client.py` (`api.moonshot.ai/v1`).
+`brain/tools/` — `time_tool.py` (stdlib), `weather_tool.py` (OpenWeatherMap), `news_tool.py` (NewsAPI), `system_tool.py` (psutil), `joke_tool.py` (Official Joke API). Cloud calls go through `brain/openai_client.py` (any OpenAI-compatible `.../chat/completions` endpoint).
 
 ### Phase 3: Senses (Wake Word) — `senses/wake_word_detector.py`
 
@@ -348,7 +348,7 @@ PyGame faces load every `*.png` in `assets/face/` (e.g. `happy`, `winking`, `thi
 
 ### Phase 5: Integration (Full System) — `orchestrator.py` + `config.py`
 
-`config.py` resolves all paths relative to the checkout, loads `config/config.json`, then `.env`, then OS env vars (`OPENWEATHER_API_KEY`, `NEWSAPI_KEY`, `MOONSHOT_API_KEY`; overridable `MORRIS_PROJECT_ROOT` / `MORRIS_CONFIG`).
+`config.py` resolves all paths relative to the checkout, loads `config/config.json`, then `.env`, then OS env vars (`OPENWEATHER_API_KEY`, `NEWSAPI_KEY`, `CLOUD_API_KEY`, `CLOUD_MODEL`, `CLOUD_BASE_URL`; overridable `MORRIS_PROJECT_ROOT` / `MORRIS_CONFIG`).
 
 `orchestrator.py`:
 - Initializes components, catching failures per optional tool and the UI
@@ -423,7 +423,7 @@ sudo journalctl -u morris-agent.service -f
 │   ├── ollama_client.py         Ollama chat + tool calls
 │   ├── router.py                Routing (tool calls + keyword fallback)
 │   ├── tool_definitions.py       Six tool schemas + system prompt
-│   ├── cloud_client.py          Kimi K2 (api.moonshot.ai)
+│   ├── openai_client.py       OpenAI-compatible client
 │   └── tools/
 │       ├── __init__.py
 │       ├── time_tool.py
@@ -459,10 +459,15 @@ sudo journalctl -u morris-agent.service -f
 ```dotenv
 OPENWEATHER_API_KEY=
 NEWSAPI_KEY=
-MOONSHOT_API_KEY=
+CLOUD_API_KEY=
+CLOUD_MODEL=
+CLOUD_BASE_URL=
 ```
 
-Keys are optional; missing-key tools reply with a configuration message.
+Cloud keys are optional; a missing-key cloud tool replies with a configuration
+message. `CLOUD_MODEL` is required together with `CLOUD_API_KEY` for the cloud
+handoff to initialize; `CLOUD_BASE_URL` defaults to `https://api.openai.com/v1`
+when omitted.
 
 ### 8.2 Main Config (`config/config.json`)
 
@@ -482,6 +487,8 @@ Keys are optional; missing-key tools reply with a configuration message.
   "mic_sample_rate": 0,
   "target_sample_rate": 16000,
   "cloud_soul_path": "config/cloud_soul.md",
+  "cloud_base_url": "https://api.openai.com/v1",
+  "cloud_model": "",
   "display_width": 800,
   "display_height": 480,
   "use_framebuffer": false,
@@ -494,7 +501,7 @@ Path resolution:
 - Relative paths are rooted at `project_root` (the checkout, or `MORRIS_PROJECT_ROOT`).
 - `MORRIS_CONFIG` and OS environment variables can override the default config file location.
 - API keys are loaded from the checkout `.env` and may be overridden by OS environment variables.
-- Secrets (`*_api_key` / `*_key`) are never written by `Config.save()`.
+- Secrets (`*_api_key` / `*_key`) are never written by `Config.save()`. `CLOUD_BASE_URL` and `CLOUD_MODEL` are not secrets and may be set in `config/config.json`.
 
 ### 8.3 Audio Devices
 
@@ -557,13 +564,13 @@ GET https://official-joke-api.appspot.com/random_joke
 
 Uses `setup` + `punchline` for a spoken joke; network failure yields a canned joke fallback.
 
-### 9.5 Kimi K2 (Moonshot)
+### 9.5 OpenAI-Compatible Cloud API
 
 ```
-POST https://api.moonshot.ai/v1/chat/completions
+POST {CLOUD_BASE_URL}/chat/completions
 Authorization: Bearer <API_KEY>
 {
-  "model": "kimi-k2-0905-preview",
+  "model": "<CLOUD_MODEL>",
   "messages": [
     {"role": "system", "content": "<cloud_soul.md>"},
     {"role": "user", "content": "Write a poem about stars"}
@@ -573,7 +580,13 @@ Authorization: Bearer <API_KEY>
 }
 ```
 
-Streaming response format:
+Any OpenAI-compatible endpoint works (OpenAI, Groq, DeepSeek, Moonshot,
+OpenRouter, vLLM, Ollama's OpenAI endpoint, etc.). Configure the provider in
+`config/config.json` or via `CLOUD_BASE_URL` / `CLOUD_MODEL` / `CLOUD_API_KEY`.
+If `CLOUD_BASE_URL` is omitted the client defaults to
+`https://api.openai.com/v1`.
+
+Streaming response format (SSE):
 ```
 data: {"choices": [{"delta": {"content": "The "}}]}
 data: [DONE]
@@ -642,7 +655,7 @@ python tests/test_audio_pipeline.py
 **Mitigations:** tune `wake_word_threshold` (default 0.5); test with the actual model (custom `Morris.onnx` or bundled fallback) and ambient recordings per deployment environment.
 
 ### 11.5 Network Failures
-**Risk:** Weather/News/Joke/Kimi unreachable.
+**Risk:** Weather/News/Joke/Cloud unreachable.
 **Mitigations:** short timeouts per call (10s weather/news, 60s cloud, 5s joke), graceful spoken error messages, and optional tool init failures that skip the tool rather than crashing startup.
 
 ### 11.6 Thermal Throttling

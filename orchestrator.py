@@ -25,7 +25,7 @@ from brain.tools.weather_tool import WeatherTool
 from brain.tools.news_tool import NewsTool
 from brain.tools.system_tool import get_system_status
 from brain.tools.joke_tool import get_joke
-from brain.cloud_client import KimiClient
+from brain.openai_client import OpenAIClient
 from senses.wake_word_detector import WakeWordDetector
 
 # Pre-generated filler WAVs in assets/fillers/
@@ -95,13 +95,16 @@ class Orchestrator:
             except Exception as e:
                 print(f"    Warning: News tool unavailable: {e}")
 
-        if config.moonshot_api_key:
+        if config.cloud_api_key:
             print("  - Cloud client")
             try:
-                self.cloud = KimiClient(
-                    api_key=config.moonshot_api_key,
-                    soul_path=config.cloud_soul_path
+                self.cloud = OpenAIClient(
+                    api_key=config.cloud_api_key,
+                    model=config.cloud_model,
+                    base_url=config.cloud_base_url,
+                    soul_path=config.cloud_soul_path,
                 )
+                print(f"    Cloud model: {self.cloud.model} @ {self.cloud.base_url}")
             except Exception as e:
                 print(f"    Warning: Cloud client unavailable: {e}")
 
@@ -346,7 +349,7 @@ class Orchestrator:
             self._speak(response)
 
         elif result.tool == ToolType.CLOUD:
-            print("[cloud kimi-k2.5] Handing off to cloud AI")
+            print("[cloud] Handing off to cloud AI")
             query = result.arguments.get("query", text)
             self._handle_cloud_query(query)
 

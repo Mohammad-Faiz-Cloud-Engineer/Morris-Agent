@@ -20,7 +20,7 @@ Microphone
   → local Ollama router
       ├─ time, weather, news, system status, or joke tools
       ├─ local conversational reply
-      └─ optional Moonshot/Kimi cloud handoff
+      └─ optional OpenAI-compatible cloud handoff
   → Piper text-to-speech
   → speaker + optional animated PyGame display
 ```
@@ -34,7 +34,7 @@ flowchart TD
 
     router -->|"simple conversation"| local["Local response"]
     router -->|"time / weather / news / system / joke"| tools["Local and API tools"]
-    router -->|"complex request"| cloud["Optional Moonshot/Kimi handoff"]
+    router -->|"complex request"| cloud["Optional OpenAI-compatible cloud handoff"]
 
     local --> tts["Piper TTS"]
     tools --> tts
@@ -56,7 +56,7 @@ flowchart TD
 | Weather | OpenWeatherMap | `OPENWEATHER_API_KEY` |
 | News | NewsAPI | `NEWSAPI_KEY` |
 | Joke | Official Joke API | Network connection |
-| Complex questions | Moonshot/Kimi | `MOONSHOT_API_KEY` and network connection |
+| Complex questions | Any OpenAI-compatible provider (OpenAI, Groq, DeepSeek, Moonshot, …) | `CLOUD_API_KEY`, `CLOUD_MODEL`, `CLOUD_BASE_URL` and network connection |
 | System status | `psutil` | Installed by the desktop requirements file |
 | Face UI | PyGame / SDL | Optional; target-display support varies by OS |
 
@@ -199,11 +199,19 @@ cp .env.example .env
 ```dotenv
 OPENWEATHER_API_KEY=
 NEWSAPI_KEY=
-MOONSHOT_API_KEY=
+CLOUD_API_KEY=
+CLOUD_MODEL=
+CLOUD_BASE_URL=
 ```
 
 Keys remain optional. Their corresponding tools respond with a configuration
 message when no key is available.
+
+The cloud handoff uses any **OpenAI-compatible** chat API. Set `CLOUD_API_KEY`
+to the provider's key and `CLOUD_MODEL` to the model name (both required).
+`CLOUD_BASE_URL` defaults to `https://api.openai.com/v1`; set it to the
+provider's base URL when using another service (e.g. `https://api.groq.com/openai/v1`,
+or a local vLLM/Ollama endpoint).
 
 ## Project layout
 

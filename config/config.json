@@ -13,6 +13,8 @@
   "mic_sample_rate": 0,
   "target_sample_rate": 16000,
   "cloud_soul_path": "config/cloud_soul.md",
+  "cloud_base_url": "https://api.openai.com/v1",
+  "cloud_model": "",
   "display_width": 800,
   "display_height": 480,
   "use_framebuffer": false,

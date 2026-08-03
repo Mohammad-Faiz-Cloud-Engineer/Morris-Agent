@@ -46,8 +46,14 @@ class Config:
 
     local_location: str = "Kingston, CA"
     openweather_api_key: str = ""
-    moonshot_api_key: str = ""
     newsapi_key: str = ""
+
+    # Generic OpenAI-compatible cloud provider. Any provider exposing an
+    # OpenAI-style /chat/completions endpoint works (OpenAI, Groq, Together,
+    # DeepSeek, Moonshot, local vLLM/Ollama, etc.).
+    cloud_api_key: str = ""
+    cloud_base_url: str = "https://api.openai.com/v1"
+    cloud_model: str = ""
     cloud_soul_path: str = _default_path("config", "cloud_soul.md")
 
     display_width: int = 800
@@ -83,10 +89,14 @@ class Config:
 
         for attribute, variable in (
             ("openweather_api_key", "OPENWEATHER_API_KEY"),
-            ("moonshot_api_key", "MOONSHOT_API_KEY"),
             ("newsapi_key", "NEWSAPI_KEY"),
+            ("cloud_api_key", "CLOUD_API_KEY"),
+            ("cloud_base_url", "CLOUD_BASE_URL"),
+            ("cloud_model", "CLOUD_MODEL"),
         ):
-            setattr(config, attribute, os.getenv(variable, getattr(config, attribute)))
+            value = os.getenv(variable)
+            if value:
+                setattr(config, attribute, value)
         return config
 
     def _resolve_paths(self) -> None:
