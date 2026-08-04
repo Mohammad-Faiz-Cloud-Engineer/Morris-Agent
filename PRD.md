@@ -146,7 +146,8 @@ aplay -l    # playback
    └── Conversation history persists (bounded by rolling summarization), so
        the assistant remembers earlier exchanges across wake words
    └── State → LISTENING; UI shows "Listening"
-   └── Audio capture records until 2 s of silence or 20 s max
+   └── Audio capture waits for speech to start, then records until 2 s of
+       silence or 20 s max
 
 3. SPEECH CAPTURED
    └── State → THINKING; UI shows "Thinking" + spinning dots
@@ -171,7 +172,14 @@ aplay -l    # playback
    └── Piper `synthesize()` → temp WAV → plays on the OS speaker
    └── Microphone MUTED during playback to prevent echo
 
-6. RETURN TO IDLE
+6. FOLLOW-UP (OPEN MIC, NO WAKE WORD)
+   └── After the response finishes, State → LISTENING again
+   └── Waits for the user to start speaking; if nothing is said within
+       30 s, proceed to step 7
+   └── If speech is caught: repeat steps 3–5 (filler + routing + response),
+       keeping the conversation going without re-saying the wake word
+
+7. RETURN TO IDLE
    └── State → IDLE; wake word detection resumes
 ```
 
@@ -187,7 +195,8 @@ class UIState(Enum):
     ERROR = "error"         # Error state (auto-recovers)
 
 # Valid transitions observed in orchestrator
-IDLE → LISTENING → THINKING → SPEAKING → IDLE
+IDLE → LISTENING → THINKING → SPEAKING → LISTENING → … (follow-up loop,
+repeat until 30 s of no speech) → IDLE
 IDLE → LISTENING → IDLE            (no speech / STT error)
 THINKING → ERROR → IDLE            (processing exception)
 ```
@@ -320,7 +329,7 @@ Each phase maps to a directory in the checkout. The reference code in this PRD r
 
 `audio/audio_manager.py` — cross-platform capture/playback with device selection, WAV normalization, and resampling to 16 kHz. Uses sounddevice/PortAudio (no ALSA binaries). Muting, silence-bounded recording, and WAV playback all live here.
 
-Key method: `record_until_silence(silence_threshold, silence_duration, max_duration) → Optional[np.ndarray]` (returns None if muted; otherwise normalized 16 kHz mono).
+Key method: `record_until_silence(silence_threshold, silence_duration, max_duration, wait_for_speech=False) → Optional[np.ndarray]` (returns None if muted or nothing was spoken in the window; otherwise normalized 16 kHz mono). With `wait_for_speech=True` leading silence is ignored — it keeps waiting (up to `max_duration`) for the user to start talking, which powers the follow-up open-mic mode.
 
 `audio/tts_engine.py` — wraps the `piper-tts` Python package with `en_GB-semaine-medium`. `synthesize()` writes a WAV; `synthesize_to_audio()` returns raw PCM.
 

@@ -120,14 +120,22 @@ class AudioManager:
         silence_threshold: float = 0.01,
         silence_duration: float = 1.5,
         max_duration: float = 30.0,
+        wait_for_speech: bool = False,
     ) -> Optional[np.ndarray]:
-        """Record until silence, then return normalized audio at ``sample_rate``."""
+        """Record until silence, then return normalized audio at ``sample_rate``.
+
+        With ``wait_for_speech=True`` leading silence is ignored: recording
+        keeps waiting (up to ``max_duration``) until the user starts talking,
+        then captures until trailing silence. Returns ``None`` when nothing
+        was spoken in the window.
+        """
         if self.is_muted:
             return None
 
         self._audio_buffer = []
         self._recording = True
         silence_elapsed = 0.0
+        speech_seen = False
         started_at = time.monotonic()
 
         def callback(indata, frames, time_info, status):
@@ -152,13 +160,20 @@ class AudioManager:
                     recent = self._audio_buffer[-1].flatten()
                     rms = np.sqrt(np.mean(recent.astype(np.float32) ** 2)) / 32768
                     chunk_seconds = len(recent) / self.mic_sample_rate
-                    silence_elapsed = silence_elapsed + chunk_seconds if rms < silence_threshold else 0.0
-                    if silence_elapsed >= silence_duration:
-                        break
+                    if not speech_seen:
+                        if rms >= silence_threshold:
+                            speech_seen = True
+                            silence_elapsed = 0.0
+                        elif wait_for_speech:
+                            continue
+                    if speech_seen or not wait_for_speech:
+                        silence_elapsed = silence_elapsed + chunk_seconds if rms < silence_threshold else 0.0
+                        if silence_elapsed >= silence_duration:
+                            break
         finally:
             self._recording = False
 
-        if not self._audio_buffer:
+        if not self._audio_buffer or not speech_seen:
             return None
         raw_audio = np.concatenate(self._audio_buffer).flatten()
         normalized = self._normalize(raw_audio)

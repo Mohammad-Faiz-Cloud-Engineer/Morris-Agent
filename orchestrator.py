@@ -9,6 +9,7 @@ import signal
 import time
 import random
 from pathlib import Path
+from typing import Optional
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).parent
@@ -217,7 +218,12 @@ class Orchestrator:
             self.wake_word.resume()
 
     def _handle_wake_interaction(self):
-        """Record, transcribe, and respond to a single wake-word interaction."""
+        """Respond to the wake word, then keep listening for follow-ups.
+
+        After each spoken response the assistant stays in a conversation: it
+        listens again (no wake word needed) for up to 30 seconds. If the user
+        says nothing in that window it returns to idle and wake-word listening.
+        """
         print("Wake word detected!")
 
         # Conversation history intentionally persists across wake words so the
@@ -230,19 +236,53 @@ class Orchestrator:
         if self.ui:
             self.ui.set_state(self.UIState.LISTENING)
 
-        # Record user speech
+        text = self._capture_and_transcribe(max_duration=20.0)
+        while text is not None:
+            # Speak a random filler phrase before processing (skip for custom actions)
+            text_lower = text.lower()
+            if "on camera" not in text_lower:
+                self._speak_filler()
+
+            # Route and respond
+            try:
+                self._process_query(text)
+            except Exception as e:
+                print(f"Processing error: {e}")
+                self._speak("Sorry, something went wrong.")
+                # Close any tool call recorded before the failure so history never
+                # holds an assistant tool call without its result.
+                self.router.record_tool_result("Sorry, something went wrong.")
+                if self.ui:
+                    self.ui.set_state(self.UIState.ERROR)
+                time.sleep(1)
+
+            # Follow-up: listen again without requiring the wake word. Goes
+            # idle when the user says nothing within the window.
+            if self.ui:
+                self.ui.set_state(self.UIState.LISTENING)
+            text = self._capture_and_transcribe(max_duration=30.0)
+
+        # Return to idle
+        if self.ui:
+            self.ui.set_state(self.UIState.IDLE)
+        self.wake_word.resume()
+
+    def _capture_and_transcribe(self, max_duration: float) -> Optional[str]:
+        """Wait for user speech, record it, and return transcribed text.
+
+        Returns ``None`` when nothing was spoken within ``max_duration`` or
+        when transcription fails so the caller can drop back to idle.
+        """
         print("Listening...")
         audio = self.audio.record_until_silence(
             silence_duration=2.0,
-            max_duration=20.0
+            max_duration=max_duration,
+            wait_for_speech=True
         )
 
         if audio is None or len(audio) == 0:
             print("No speech detected")
-            if self.ui:
-                self.ui.set_state(self.UIState.IDLE)
-            self.wake_word.resume()
-            return
+            return None
 
         # Update UI
         if self.ui:
@@ -256,40 +296,13 @@ class Orchestrator:
         except Exception as e:
             print(f"Transcription error: {e}")
             self._speak("Sorry, I didn't catch that.")
-            if self.ui:
-                self.ui.set_state(self.UIState.IDLE)
-            self.wake_word.resume()
-            return
+            return None
 
         if not text.strip():
             self._speak("I didn't hear anything.")
-            if self.ui:
-                self.ui.set_state(self.UIState.IDLE)
-            self.wake_word.resume()
-            return
+            return None
 
-        # Speak a random filler phrase before processing (skip for custom actions)
-        text_lower = text.lower()
-        if "on camera" not in text_lower:
-            self._speak_filler()
-
-        # Route and respond
-        try:
-            self._process_query(text)
-        except Exception as e:
-            print(f"Processing error: {e}")
-            self._speak("Sorry, something went wrong.")
-            # Close any tool call recorded before the failure so history never
-            # holds an assistant tool call without its result.
-            self.router.record_tool_result("Sorry, something went wrong.")
-            if self.ui:
-                self.ui.set_state(self.UIState.ERROR)
-            time.sleep(1)
-
-        # Return to idle
-        if self.ui:
-            self.ui.set_state(self.UIState.IDLE)
-        self.wake_word.resume()
+        return text
 
     def _speak_filler(self):
         """Play a random pre-generated filler phrase."""
