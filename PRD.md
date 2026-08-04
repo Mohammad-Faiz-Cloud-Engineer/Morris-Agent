@@ -45,7 +45,7 @@ Create a modular, local-first voice AI assistant that runs on any desktop or lap
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | Local LLM | Single Qwen2.5:1.5b for routing AND chat | Native tool-calling, ~3GB RAM |
-| STT | `auto` backend: whisper.cpp `base.en-q5_0` when provisioned, else faster-whisper | Balance of speed and accuracy; portable fallback for desktops |
+| STT | `auto` backend: whisper.cpp `small.en-q5_0` when provisioned, else faster-whisper | Balance of speed and accuracy; portable fallback for desktops |
 | TTS | Piper Python package (`piper-tts`) with `en_GB-semaine-medium` | In-process synthesis, ~50MB RAM, no external binary needed |
 | Wake Word | Custom openWakeWord `Morris.onnx`; bundled `Hey Jarvis` fallback | Trainable; a clean checkout works immediately |
 | Tools | time, weather, news, system status, joke, cloud handoff | Six schemas covering the assistant's capabilities |
@@ -205,7 +205,7 @@ THINKING → ERROR → IDLE            (processing exception)
 | Model Runtime | Ollama | Latest | `curl -fsSL https://ollama.com/install.sh \| sh` |
 | Local LLM | Qwen2.5:1.5b | `qwen2.5:1.5b` | `ollama pull qwen2.5:1.5b` |
 | Wake Word | openWakeWord + onnxruntime | 0.6+ / 1.18+ | `pip install openwakeword onnxruntime` |
-| STT | whisper.cpp `whisper-cli` OR faster-whisper | `base.en-q5_0` / `base.en` | built by `scripts/setup_raspi.sh` or `pip install faster-whisper` |
+| STT | whisper.cpp `whisper-cli` OR faster-whisper | `small.en-q5_0` / `small.en` | built by `scripts/setup_raspi.sh` or `pip install faster-whisper` |
 | TTS | Piper Python package | `piper-tts>=1.3` | `pip install piper-tts` |
 | Voice | `en_GB-semaine-medium` | ONNX + `.onnx.json` | downloaded by setup scripts |
 | UI | PyGame | 2.5+ | `pip install pygame` |
@@ -229,7 +229,7 @@ What `scripts/setup_raspi.sh` does in order:
 1. `apt` installs: Python tooling, build tools, SDL2, PortAudio, ALSA utilities
 2. Creates `venv313` and installs Python deps (`httpx sounddevice numpy piper-tts openwakeword onnxruntime pygame`)
 3. Installs Ollama and pulls `qwen2.5:1.5b`
-4. Clones + builds whisper.cpp, installs the `whisper-cli` binary as `whisper-cpp` in `/usr/local/bin`, downloads `base.en`, quantizes to `q5_0`
+4. Clones + builds whisper.cpp, installs the `whisper-cli` binary as `whisper-cpp` in `/usr/local/bin`, downloads `small.en`, quantizes to `q5_0`
 5. Downloads `en_GB-semaine-medium.onnx` + `.onnx.json` into `piper/voices/`
 6. Copies `.env.example` → `.env`
 
@@ -477,9 +477,9 @@ when omitted.
   "assets_path": "assets/face",
   "piper_voice": "piper/voices/en_GB-semaine-medium.onnx",
   "whisper_path": "whisper-cli",
-  "whisper_model": "whisper.cpp/models/ggml-base.en-q5_0.bin",
+  "whisper_model": "whisper.cpp/models/ggml-small.en-q5_0.bin",
   "stt_backend": "auto",
-  "stt_model_name": "base.en",
+  "stt_model_name": "small.en",
   "chat_model": "qwen2.5:1.5b",
   "wake_word_model": "models/wake_word/Morris.onnx",
   "wake_word_threshold": 0.5,

@@ -30,7 +30,7 @@ class WhisperSTT:
         language: str = "en",
         threads: int = 4,
         backend: str = "auto",
-        model_name: str = "base.en",
+        model_name: str = "small.en",
     ):
         self.model_path = model_path
         self.language = language
@@ -42,7 +42,13 @@ class WhisperSTT:
         if self.backend not in {"auto", "whisper_cpp", "faster_whisper"}:
             raise ValueError("stt_backend must be auto, whisper_cpp, or faster_whisper")
 
-        use_cpp = self.backend != "faster_whisper" and self.whisper_path and Path(model_path).exists()
+        use_cpp = (
+            self.backend != "faster_whisper"
+            and self.whisper_path
+            and model_path
+            and Path(model_path).exists()
+            and Path(model_path).is_file()
+        )
         if use_cpp:
             self.backend = "whisper_cpp"
             print(f"    STT backend: whisper.cpp ({self.whisper_path})")

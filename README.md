@@ -151,7 +151,7 @@ are relative to the repository by default; the code resolves them at startup.
   "mic_sample_rate": 0,
   "target_sample_rate": 16000,
   "stt_backend": "auto",
-  "stt_model_name": "base.en",
+  "stt_model_name": "small.en",
   "enable_ui": true,
   "use_framebuffer": false
 }

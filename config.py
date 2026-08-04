@@ -30,9 +30,9 @@ class Config:
     # PATH (for example ``whisper-cli`` or ``whisper-cli.exe``).
     piper_voice: str = _default_path("piper", "voices", "en_GB-semaine-medium.onnx")
     whisper_path: str = "whisper-cli"
-    whisper_model: str = _default_path("whisper.cpp", "models", "ggml-base.en-q5_0.bin")
+    whisper_model: str = _default_path("whisper.cpp", "models", "ggml-small.en-q5_0.bin")
     stt_backend: str = "auto"  # auto, whisper_cpp, or faster_whisper
-    stt_model_name: str = "base.en"  # Used by faster-whisper.
+    stt_model_name: str = "small.en"  # Used by faster-whisper.
     chat_model: str = "qwen2.5:1.5b"
     wake_word_model: str = _default_path("models", "wake_word", "Morris.onnx")
     wake_word_threshold: float = 0.5
