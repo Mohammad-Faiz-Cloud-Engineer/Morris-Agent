@@ -1,6 +1,7 @@
 {
   "assets_path": "assets/face",
   "piper_voice": "piper/voices/en_GB-semaine-medium.onnx",
+  "tts_speaking_rate": 0.75,
   "whisper_path": "whisper-cli",
   "whisper_model": "whisper.cpp/models/ggml-small.en-q5_0.bin",
   "stt_backend": "auto",

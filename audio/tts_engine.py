@@ -24,7 +24,7 @@ class PiperTTS:
     def __init__(
         self,
         model_path: str = "",
-        speaking_rate: float = 1.0,
+        speaking_rate: float = 0.75,
         speaker_id: int = 0  # For multi-speaker models
     ):
         if not model_path:

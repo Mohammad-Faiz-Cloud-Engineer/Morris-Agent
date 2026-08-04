@@ -29,6 +29,7 @@ class Config:
     # Models and executables.  ``whisper_path`` may be an executable name on
     # PATH (for example ``whisper-cli`` or ``whisper-cli.exe``).
     piper_voice: str = _default_path("piper", "voices", "en_GB-semaine-medium.onnx")
+    tts_speaking_rate: float = 0.75  # <1.0 = slower speech, easier to follow
     whisper_path: str = "whisper-cli"
     whisper_model: str = _default_path("whisper.cpp", "models", "ggml-small.en-q5_0.bin")
     stt_backend: str = "auto"  # auto, whisper_cpp, or faster_whisper

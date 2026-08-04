@@ -60,7 +60,10 @@ class Orchestrator:
         )
 
         print("  - TTS engine")
-        self.tts = PiperTTS(model_path=config.piper_voice)
+        self.tts = PiperTTS(
+            model_path=config.piper_voice,
+            speaking_rate=config.tts_speaking_rate,
+        )
 
         print("  - STT engine")
         self.stt = WhisperSTT(
