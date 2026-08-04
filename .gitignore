@@ -22,9 +22,10 @@ whisper.cpp/
 piper/voices/*.onnx
 piper/voices/*.onnx.json
 
-# Wake word models at project root (duplicates of models/wake_word/)
+# Wake word models: ignore all, but KEEP the primary custom Morris model
 *.onnx
 *.tflite
+!models/wake_word/Morris.onnx
 
 # IDE
 .vscode/
