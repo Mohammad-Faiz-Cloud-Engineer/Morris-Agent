@@ -146,7 +146,7 @@ aplay -l    # playback
    └── Conversation history persists (bounded by rolling summarization), so
        the assistant remembers earlier exchanges across wake words
    └── State → LISTENING; UI shows "Listening"
-   └── Audio capture records until 3 s of silence or 20 s max
+   └── Audio capture records until 2 s of silence or 20 s max
 
 3. SPEECH CAPTURED
    └── State → THINKING; UI shows "Thinking" + spinning dots
@@ -609,7 +609,7 @@ python tests/test_audio_pipeline.py
 - TTS synthesizes and plays clearly through the default/configured speaker.
 - STT transcribes clear speech with <15% WER on the chosen backend.
 - Microphone is muted during TTS playback.
-- Silence detection stops recording after ~3s of quiet.
+- Silence detection stops recording after ~2s of quiet.
 
 ### 10.2 Brain
 - Ollama responds within ~5 seconds for simple queries.
