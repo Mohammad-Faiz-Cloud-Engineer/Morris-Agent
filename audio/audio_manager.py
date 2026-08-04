@@ -134,9 +134,20 @@ class AudioManager:
 
         self._audio_buffer = []
         self._recording = True
-        silence_elapsed = 0.0
         speech_seen = False
         started_at = time.monotonic()
+        # Silence is measured in wall-clock time so the configured trailing
+        # window is honored in real seconds regardless of PortAudio buffer size.
+        last_speech_time = started_at
+        speech_started_at = None
+        stop_reason = "max_duration"
+        # Ambient-noise calibration: the quietest RMS seen in the first half
+        # second becomes the noise floor, so constant mic hiss never counts as
+        # speech. The floor is doubled (minimum 0.01, maximum 0.05) so the
+        # detector works on both silent and noisy microphones.
+        noise_floor = silence_threshold
+        calibration_until = started_at + 0.5
+        effective_threshold = silence_threshold
 
         def callback(indata, frames, time_info, status):
             if status:
@@ -159,19 +170,29 @@ class AudioManager:
                         continue
                     recent = self._audio_buffer[-1].flatten()
                     rms = np.sqrt(np.mean(recent.astype(np.float32) ** 2)) / 32768
-                    chunk_seconds = len(recent) / self.mic_sample_rate
-                    if not speech_seen:
-                        if rms >= silence_threshold:
-                            speech_seen = True
-                            silence_elapsed = 0.0
-                        elif wait_for_speech:
-                            continue
-                    if speech_seen or not wait_for_speech:
-                        silence_elapsed = silence_elapsed + chunk_seconds if rms < silence_threshold else 0.0
-                        if silence_elapsed >= silence_duration:
+                    now = time.monotonic()
+                    if not speech_seen and now <= calibration_until:
+                        noise_floor = min(noise_floor, rms)
+                        effective_threshold = max(
+                            silence_threshold, min(noise_floor * 2.0, 0.05)
+                        )
+                    if rms >= effective_threshold:
+                        if not speech_seen:
+                            speech_started_at = now
+                        speech_seen = True
+                        last_speech_time = now
+                    elif speech_seen or not wait_for_speech:
+                        if now - last_speech_time >= silence_duration:
+                            stop_reason = "silence"
                             break
         finally:
             self._recording = False
+
+        if speech_seen:
+            print(f"    [audio] listened {time.monotonic() - started_at:.2f}s "
+                  f"(speech {last_speech_time - speech_started_at:.2f}s, "
+                  f"stopped by {stop_reason}, noise floor {noise_floor:.3f}, "
+                  f"threshold {effective_threshold:.3f})")
 
         if not self._audio_buffer or not speech_seen:
             return None

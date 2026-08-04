@@ -224,7 +224,7 @@ class Orchestrator:
         """Respond to the wake word, then keep listening for follow-ups.
 
         After each spoken response the assistant stays in a conversation: it
-        listens again (no wake word needed) for up to 30 seconds. If the user
+        listens again (no wake word needed) for up to 20 seconds. If the user
         says nothing in that window it returns to idle and wake-word listening.
         """
         print("Wake word detected!")
@@ -260,10 +260,10 @@ class Orchestrator:
                 time.sleep(1)
 
             # Follow-up: listen again without requiring the wake word. Goes
-            # idle when the user says nothing within the window.
+            # idle when the user says nothing within the 20-second window.
             if self.ui:
                 self.ui.set_state(self.UIState.LISTENING)
-            text = self._capture_and_transcribe(max_duration=30.0)
+            text = self._capture_and_transcribe(max_duration=20.0)
 
         # Return to idle
         if self.ui:
