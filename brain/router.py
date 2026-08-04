@@ -48,9 +48,25 @@ class Router:
         "help", "what can you do",
     ]
 
+    # Rolling context summarization. Instead of replaying the entire raw
+    # transcript on every turn (which grows prompt length and VRAM use without
+    # bound on long conversations), the oldest exchanges are folded into a
+    # compact summary and only the most recent few exchanges are kept in full.
+    MAX_RAW_EXCHANGES = 4
+    MAX_SUMMARY_CHARS = 2000
+    SUMMARY_PROMPT = (
+        "You are the summarizer for a conversation with a voice assistant. "
+        "Compress it into 2-3 plain sentences, keeping important facts: names, "
+        "places, times, temperatures, numbers, decisions, and the assistant's "
+        "final statements. Blend it with any existing summary so the result "
+        "covers everything so far in one continuous text. Output only the "
+        "summary, no preamble and no bullet points."
+    )
+
     def __init__(self, ollama_client: OllamaClient):
         self.client = ollama_client
         self.conversation_history = []
+        self.summary = ""
 
     def _is_local_chat(self, user_input: str) -> bool:
         """Check if the input is simple enough for the local model."""
@@ -173,6 +189,12 @@ class Router:
         return ""  # No location found, orchestrator will use config default
 
     def route(self, user_input: str) -> RouterResult:
+        """Route user input and manage rolling conversation summarization."""
+        result = self._route_core(user_input)
+        self._maybe_summarize()
+        return result
+
+    def _route_core(self, user_input: str) -> RouterResult:
         """
         Route user input to appropriate handler.
         """
@@ -181,8 +203,35 @@ class Router:
             {"role": "system", "content": SYSTEM_PROMPT}
         ]
 
-        # Add conversation history (keep last 4 exchanges for context)
-        messages.extend(self.conversation_history[-8:])
+        # Bring back a compact summary of the older parts of the conversation
+        if self.summary:
+            messages.append(
+                {
+                    "role": "system",
+                    "content": f"Earlier in this conversation:\n{self.summary}",
+                }
+            )
+
+        # Add conversation history (keep the last few exchanges for context).
+        # Every exchange is a (user, assistant, tool result) triplet; a tail
+        # slice can cut mid-triplet, so drop any leading message whose pair
+        # fell outside the window.
+        history = self.conversation_history[-12:]
+        while history:
+            if history[0].get("role") == "tool":
+                # Its assistant tool-call was cut off by the window.
+                history.pop(0)
+            elif (
+                history[0].get("role") == "assistant"
+                and history[0].get("tool_calls")
+                and (len(history) < 2 or history[1].get("role") != "tool")
+            ):
+                # A dangling tool call: Ollama requires every assistant
+                # tool call to be followed by its tool result.
+                history.pop(0)
+            else:
+                break
+        messages.extend(history)
 
         # Add current user message
         messages.append({"role": "user", "content": user_input})
@@ -203,10 +252,10 @@ class Router:
                 tool_type, arguments = self._detect_tool_from_text(
                     user_input, response.content
                 )
-                self.conversation_history.append(
-                    {"role": "user", "content": user_input}
-                )
                 if tool_type == ToolType.NONE:
+                    self.conversation_history.append(
+                        {"role": "user", "content": user_input}
+                    )
                     self.conversation_history.append(
                         {"role": "assistant", "content": response.content or ""}
                     )
@@ -215,13 +264,12 @@ class Router:
                         response=response.content,
                         arguments={},
                     )
+                self._record_tool_call(user_input, tool_type, arguments)
                 return RouterResult(
                     tool=tool_type, response=None, arguments=arguments
                 )
 
-            self.conversation_history.append(
-                {"role": "user", "content": user_input}
-            )
+            self._record_tool_call(user_input, tool_type, tool_call.arguments)
 
             return RouterResult(
                 tool=tool_type,
@@ -234,12 +282,11 @@ class Router:
                 user_input, response.content
             )
 
-            self.conversation_history.append(
-                {"role": "user", "content": user_input}
-            )
-
             if tool_type == ToolType.NONE:
                 # Simple chat — use the local model's response
+                self.conversation_history.append(
+                    {"role": "user", "content": user_input}
+                )
                 self.conversation_history.append(
                     {"role": "assistant", "content": response.content or ""}
                 )
@@ -250,12 +297,128 @@ class Router:
                 )
             else:
                 # Tool or cloud handoff
+                self._record_tool_call(user_input, tool_type, arguments)
                 return RouterResult(
                     tool=tool_type,
                     response=None,
                     arguments=arguments
                 )
 
+    def _record_tool_call(
+        self, user_input: str, tool_type: ToolType, arguments: dict
+    ) -> None:
+        """
+        Store the user message and the assistant tool call so the tool result
+        recorded afterwards is grounded in context for later turns.
+        """
+        self.conversation_history.append(
+            {"role": "user", "content": user_input}
+        )
+        self.conversation_history.append(
+            {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [
+                    {
+                        "function": {
+                            "name": tool_type.value,
+                            "arguments": arguments or {},
+                        }
+                    }
+                ],
+            }
+        )
+
+    def record_tool_result(self, result_text: str) -> None:
+        """
+        Store the result of the last tool call for future context.
+
+        No-op unless the previous message is an assistant tool call, so stray
+        or repeated calls can never leave an orphaned ``tool`` message.
+        """
+        if not self.conversation_history:
+            return
+        last = self.conversation_history[-1]
+        tool_calls = (
+            last.get("tool_calls") if last.get("role") == "assistant" else None
+        )
+        if not tool_calls:
+            return
+        tool_name = tool_calls[0].get("function", {}).get("name", "")
+        message = {"role": "tool", "content": result_text or ""}
+        if tool_name:
+            message["tool_name"] = tool_name
+        self.conversation_history.append(message)
+
+    @staticmethod
+    def _split_exchanges(history: list) -> list:
+        """Split history into exchange groups, each starting with a user turn."""
+        exchanges = []
+        start = 0
+        for index, message in enumerate(history):
+            if index > 0 and message.get("role") == "user":
+                exchanges.append(history[start:index])
+                start = index
+        exchanges.append(history[start:])
+        return exchanges
+
+    @staticmethod
+    def _exchange_to_text(exchange: list) -> str:
+        """Render one exchange as plain text for the summarizer."""
+        lines = []
+        for message in exchange:
+            role = message.get("role")
+            if role == "assistant" and message.get("tool_calls"):
+                for call in message["tool_calls"]:
+                    fn = call.get("function", {})
+                    lines.append(f"assistant called {fn.get('name')} with {fn.get('arguments', {})}")
+            elif role == "tool" and message.get("content"):
+                lines.append(f"tool result: {message['content']}")
+            elif role in ("user", "assistant") and message.get("content"):
+                lines.append(f"{role}: {message['content']}")
+        return " ".join(lines)
+
+    def _summarize(self, exchanges_text: str) -> str:
+        """Summarize old exchanges (together with the prior summary) with the local model."""
+        try:
+            response = self.client.chat(
+                [
+                    {"role": "system", "content": self.SUMMARY_PROMPT},
+                    {
+                        "role": "user",
+                        "content": (
+                            f"Existing summary: {self.summary or '(none)'}\n"
+                            f"Conversation to condense: {exchanges_text}"
+                        ),
+                    },
+                ],
+                tools=None,
+            )
+            summary = (response.content or "").strip()
+            if summary:
+                return summary
+        except Exception as error:
+            print(f"[router] summarization failed: {error}")
+        return exchanges_text[-300:] if exchanges_text else ""
+
+    def _maybe_summarize(self) -> None:
+        """Fold the oldest exchanges into the summary so context stays bounded."""
+        exchanges = self._split_exchanges(self.conversation_history)
+        while len(exchanges) > self.MAX_RAW_EXCHANGES:
+            oldest = exchanges.pop(0)
+            condensed = self._summarize(self._exchange_to_text(oldest))
+            if self.summary:
+                self.summary = f"{self.summary}\n{condensed}"
+            else:
+                self.summary = condensed
+            # Hard cap so history can never grow without bound.
+            self.summary = self.summary[-self.MAX_SUMMARY_CHARS:]
+        if self.conversation_history and self._split_exchanges(self.conversation_history) != exchanges:
+            self.conversation_history = [
+                message for group in exchanges for message in group
+            ]
+
     def clear_history(self):
         """Clear conversation history."""
         self.conversation_history = []
+        self.summary = ""

@@ -143,7 +143,8 @@ aplay -l    # playback
    └── UI showing "Idle" animation
 
 2. WAKE WORD DETECTED ("Morris" / "Hey Jarvis")
-   └── Router conversation history is cleared (fresh interaction)
+   └── Conversation history persists (bounded by rolling summarization), so
+       the assistant remembers earlier exchanges across wake words
    └── State → LISTENING; UI shows "Listening"
    └── Audio capture records until 1.5 s of silence or 15 s max
 
@@ -354,7 +355,7 @@ PyGame faces load every `*.png` in `assets/face/` (e.g. `happy`, `winking`, `thi
 - Initializes components, catching failures per optional tool and the UI
 - Loads pre-generated filler WAVs from `assets/fillers/`
 - Speaks the startup greeting **before** starting the wake-word detector (so its own voice doesn't trigger "Hey")
-- Resets conversation history on every wake word (transient context per interaction)
+- Persists conversation history across wake words (bounded by rolling summarization in the router); the spoken reset command ("forget everything", "start over", …) clears it
 - Handles the custom "on camera" introduction phrase
 - Speaks a random filler before routing (except "on camera")
 - Forces `os._exit(0)` on shutdown to kill daemon sounddevice threads
@@ -614,7 +615,7 @@ python tests/test_audio_pipeline.py
 - Ollama responds within ~5 seconds for simple queries.
 - Tool routing works: time, weather, news, system, joke, cloud.
 - Keyword-text fallback produces the same routing as structured tool calls.
-- Simple greetings stay local; conversation history resets per wake word.
+- Simple greetings stay local; conversation history persists across wake words, folded into a rolling summary so prompt length stays bounded; "forget everything" resets it.
 
 > Routing note: jokes route to `get_joke` (`ToolType.JOKE`). test_router.py asserts `("Tell me a joke", ToolType.JOKE)` — the original `NONE` expectation was stale after `get_joke` and its keyword fallback were added.
 

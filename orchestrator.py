@@ -206,6 +206,9 @@ class Orchestrator:
         except Exception as error:
             print(f"Wake interaction error: {error}")
             self._speak("Sorry, something went wrong.")
+            # Same pairing guarantee as above, in case the error escaped the
+            # interaction handler before a tool result was recorded.
+            self.router.record_tool_result("Sorry, something went wrong.")
         finally:
             # Always restore a listening state — even after an error — so the
             # wake-word thread is never left paused or killed by an exception.
@@ -217,9 +220,9 @@ class Orchestrator:
         """Record, transcribe, and respond to a single wake-word interaction."""
         print("Wake word detected!")
 
-        # Clear conversation history — each wake word is a fresh interaction
-        self.router.clear_history()
-
+        # Conversation history intentionally persists across wake words so the
+        # assistant remembers the conversation. The router keeps it bounded via
+        # rolling summarization; say "forget everything" to reset it.
         # Pause wake word detection
         self.wake_word.pause()
 
@@ -276,6 +279,9 @@ class Orchestrator:
         except Exception as e:
             print(f"Processing error: {e}")
             self._speak("Sorry, something went wrong.")
+            # Close any tool call recorded before the failure so history never
+            # holds an assistant tool call without its result.
+            self.router.record_tool_result("Sorry, something went wrong.")
             if self.ui:
                 self.ui.set_state(self.UIState.ERROR)
             time.sleep(1)
@@ -309,6 +315,20 @@ class Orchestrator:
             )
             return
 
+        # Custom action: reset the conversation memory
+        text_lower = text.lower()
+        if any(
+            phrase in text_lower
+            for phrase in (
+                "forget everything", "forget our conversation", "clear your memory",
+                "clear our conversation", "start over", "start fresh", "reset our conversation",
+            )
+        ):
+            print("[custom] reset conversation memory")
+            self.router.clear_history()
+            self._speak("Okay, I've forgotten our previous conversation.")
+            return
+
         result = self.router.route(text)
 
         if result.tool == ToolType.NONE:
@@ -317,36 +337,31 @@ class Orchestrator:
 
         elif result.tool == ToolType.TIME:
             print("[tool] get_current_time")
-            response = get_current_time()
-            self._speak(response)
+            self._respond(get_current_time())
 
         elif result.tool == ToolType.WEATHER:
             if self.weather:
                 location = result.arguments.get("location") or self.config.local_location
                 print(f"[tool] get_weather → {location}")
-                response = self.weather.get_weather(location)
-                self._speak(response)
+                self._respond(self.weather.get_weather(location))
             else:
-                self._speak("Sorry, weather lookup is not configured.")
+                self._respond("Sorry, weather lookup is not configured.")
 
         elif result.tool == ToolType.NEWS:
             if self.news:
                 category = result.arguments.get("category", "")
                 print(f"[tool] get_news → {category or 'general'}")
-                response = self.news.get_news(category)
-                self._speak(response)
+                self._respond(self.news.get_news(category))
             else:
-                self._speak("Sorry, news lookup is not configured.")
+                self._respond("Sorry, news lookup is not configured.")
 
         elif result.tool == ToolType.SYSTEM_STATUS:
             print("[tool] get_system_status")
-            response = get_system_status()
-            self._speak(response)
+            self._respond(get_system_status())
 
         elif result.tool == ToolType.JOKE:
             print("[tool] get_joke")
-            response = get_joke()
-            self._speak(response)
+            self._respond(get_joke())
 
         elif result.tool == ToolType.CLOUD:
             print("[cloud] Handing off to cloud AI")
@@ -356,16 +371,21 @@ class Orchestrator:
     def _handle_cloud_query(self, query: str):
         """Handle cloud API query."""
         if not self.cloud:
-            self._speak("Sorry, cloud AI is not configured.")
+            self._respond("Sorry, cloud AI is not configured.")
             return
 
         try:
             # Non-streaming for simplicity
             response = self.cloud.chat(query, stream=False)
-            self._speak(response)
+            self._respond(response)
         except Exception as e:
             print(f"Cloud error: {e}")
-            self._speak("Sorry, I couldn't reach the cloud AI.")
+            self._respond("Sorry, I couldn't reach the cloud AI.")
+
+    def _respond(self, text: str) -> None:
+        """Speak a tool/cloud result and store it in the router's context."""
+        self._speak(text)
+        self.router.record_tool_result(text)
 
     def _speak(self, text: str):
         """Speak text through TTS."""
