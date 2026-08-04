@@ -233,8 +233,8 @@ class Orchestrator:
         # Record user speech
         print("Listening...")
         audio = self.audio.record_until_silence(
-            silence_duration=1.5,
-            max_duration=15.0
+            silence_duration=3.0,
+            max_duration=20.0
         )
 
         if audio is None or len(audio) == 0:
